@@ -1,0 +1,11 @@
+{
+    "id":"reflecs.systems.admin",
+    "type":"library",
+    "value": {
+        "use": [
+            "reflecs",
+            "reflecs.util",
+            "reflecs.components.http"
+        ]
+    }
+}

@@ -1,0 +1,159 @@
+
+body {
+  color: #aaa;
+  background-color: #000;
+  font-family: 'Roboto';
+  letter-spacing: 0.9;
+  margin: 0px;
+  font-size: 13px;
+}
+
+div.app-toggle-false {
+  border: 1px solid #47b784;
+  color: #47b784;
+  border-radius: 5px;
+  text-align: center;
+  text-transform: uppercase;
+  padding-top: 7px;
+  height: 22px;
+  width: 100px;
+  display: block;
+  cursor: pointer;
+}
+
+div.app-toggle-true {
+  background-color: #47b784;
+  color: #000;
+  border-radius: 5px;
+  text-align: center;
+  text-transform: uppercase;
+  padding-top: 7px;
+  height: 22px;
+  width: 100px;
+  display: block;
+  cursor: pointer;
+}
+
+div.app-menu {
+  position: absolute;
+  box-sizing: border-box;
+  top: 0px;
+  width: 250px;
+  height: 100%;
+  background-color: #121212;
+  padding-left: 20px;
+}
+
+div.app-menu-header {
+  margin-top: 40px;
+  text-transform: uppercase;
+  font-weight: 300;
+}
+
+div.app-menu-item {
+  margin-top: 10px;
+  font-weight: 500;
+}
+
+div.app-data {
+  position: absolute;
+  box-sizing: border-box;
+  top: 0px;
+  left: 250px;
+  width: calc(100% - 250px);
+  height: 100%;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+div.app-data h1 {
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+/* Thick red border */
+div.app-data hr {
+  border: 0.5px solid #282828;
+}
+
+div.fps {
+  background-color: #000;
+  border-radius: 5px;
+  border: 1px solid #282828;
+  margin-top: 20px;
+  display: block;
+  padding: 10px;
+}
+
+#fps-graph {
+  width: 100%;
+}
+
+div.app-table {
+  background-color: #000;
+  border-radius: 5px;
+  margin-top: 20px;
+  padding-bottom: 0px;
+  border: 1px solid #282828;
+}
+
+div.app-table-top {
+  background-color: #121212;
+  padding-left: 40px;
+  padding-right: 40px;
+  padding-top: 5px;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+}
+
+div.app-table-content {
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  max-height: 430px;
+  overflow-y: auto;
+  padding-left: 40px;
+  padding-right: 40px;
+}
+
+div.app-table h2 {
+  font-size: 1.1em;
+  font-weight: 300;
+  margin: 0px;
+  margin-top: 5px;
+  padding-bottom: 10px;
+  text-transform: uppercase;
+}
+
+table {
+  font-family: Roboto,Noto Sans,Noto,sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+  text-align: left;
+  font-size: 1.0em;
+}
+
+thead {
+}
+
+table th:first-child {
+  text-align: left;
+}
+
+table th {
+  padding: 15px;
+  padding-left: 0px;
+  padding-right: 0px;
+  text-transform: uppercase;
+  font-weight: 300;
+}
+
+table td {
+  padding: 14px;
+  padding-left: 0px;
+  padding-right: 0px;
+  border-top-color: #282828;
+  border-top-style: solid;
+  border-top-width: 1px;
+  font-size: inherit;
+  font-weight: 500;
+}
