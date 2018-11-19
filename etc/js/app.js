@@ -40,7 +40,15 @@ const chart_data = {
 
 Vue.component('app-toggle', {
   props: ['text', 'enabled', 'link'],
+  data: function() {
+    return {
+      in_progress: false
+    }
+  },
   methods: {
+    mousedown() {
+      this.in_progress = true;
+    },
     clicked() {
       const Http = new XMLHttpRequest();
       const url = "http://" + host + "/" + this.link;
@@ -48,32 +56,43 @@ Vue.component('app-toggle', {
       Http.send();
       Http.onreadystatechange = (e)=>{
         if (Http.readyState == 4) {
+          this.in_progress = false;
           this.$emit('refresh', {});
+        }
+      }
+    },
+    cssClass() {
+      if (this.in_progress) {
+        return "app-toggle-in-progress";
+      } else {
+        if (this.enabled) {
+          return "app-toggle-true";
+        } else {
+          return "app-toggle-false";
         }
       }
     }
   },
   template: `
-  <div :class="'app-toggle-' + enabled" v-on:click="clicked()">
+  <div :class="'app-toggle ' + cssClass()"
+    v-on:click="clicked()"
+    v-on:mousedown="mousedown()">
     {{text}}
   </div>`
 });
 
 Vue.component('app-system-row', {
-  props: ['world', 'system', 'kind', 'active'],
+  props: ['world', 'system', 'kind'],
   methods: {
-    enabledColor(enabled) {
-      if (enabled) {
-        return "#47b784";
+    enabledColor() {
+      if (this.system.enabled) {
+        if (this.system.active) {
+          return "#47b784";
+        } else {
+          return "orange";
+        }
       } else {
         return "red";
-      }
-    },
-    activeColor(active) {
-      if (active) {
-        return "#47b784";
-      } else {
-        return "orange";
       }
     },
     buttonText(enabled) {
@@ -92,13 +111,14 @@ Vue.component('app-system-row', {
       <td>{{system.id}}</td>
       <td>{{kind}}</td>
       <td>
-        <svg height="10" width="10">
-          <circle cx="5" cy="5" r="4" stroke-width="0" :fill="enabledColor(system.enabled)"/>
-        </svg>
+        {{system.tables_matched}}
+      </td>
+      <td>
+        {{system.entities_matched}}
       </td>
       <td>
         <svg height="10" width="10">
-          <circle cx="5" cy="5" r="4" stroke-width="0" :fill="activeColor(active)"/>
+          <circle cx="5" cy="5" r="4" stroke-width="0" :fill="enabledColor()"/>
         </svg>
       </td>
       <td>
@@ -117,39 +137,24 @@ Vue.component('app-systems', {
   template: `
     <div class="app-table">
       <div class="app-table-top">
-        <h2>Systems</h2>
+        <h2>periodic systems</h2>
       </div>
       <div class="app-table-content">
         <table>
           <thead>
             <tr>
-              <th>id</th><th>kind</th><th>enabled</th><th>active</th><th>toggle</th>
+              <th>id</th>
+              <th>kind</th>
+              <th>tables</th>
+              <th>entities</th>
+              <th>enabled</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             <app-system-row
-              v-for="system in world.systems.active_systems"
-              :key="system.id" :system="system" :kind="'periodic'" :active="true"
-              v-on:refresh="$emit('refresh', $event)">
-            </app-system-row>
-            <app-system-row
-              v-for="system in world.systems.inactive_systems"
-              :key="system.id" :system="system" :kind="'periodic'" :active="false"
-              v-on:refresh="$emit('refresh', $event)">
-            </app-system-row>
-            <app-system-row
-              v-for="system in world.systems.on_add_systems"
-              :key="system.id" :system="system" :kind="'on add'" :active="true"
-              v-on:refresh="$emit('refresh', $event)">
-            </app-system-row>
-            <app-system-row
-              v-for="system in world.systems.on_set_systems"
-              :key="system.id" :system="system" :kind="'on set'" :active="true"
-              v-on:refresh="$emit('refresh', $event)">
-            </app-system-row>
-            <app-system-row
-              v-for="system in world.systems.on_remove_systems"
-              :key="system.id" :system="system" :kind="'on remove'" :active="true"
+              v-for="system in world.systems.periodic_systems"
+              :key="system.id" :system="system" :kind="'periodic'"
               v-on:refresh="$emit('refresh', $event)">
             </app-system-row>
           </tbody>
@@ -215,8 +220,8 @@ Vue.component('app-world-data', {
             </tr>
           </thead>
           <tbody>
-            <td>{{world.memory_used}}</td>
-            <td>{{world.memory_allocd}}</td>
+            <td>{{world.memory_used / 1000}}KB</td>
+            <td>{{world.memory_allocd / 1000}}KB</td>
             <td>{{world.table_count}}</td>
             <td>{{world.system_count}}</td>
             <td>{{world.entity_count}}</td>
@@ -290,11 +295,11 @@ Vue.component('app-world', {
 });
 
 Vue.component('app-menu-system', {
-  props: ['system', 'active'],
+  props: ['system'],
   methods: {
     fillColor() {
       if (this.system.enabled) {
-          if (this.active) {
+          if (this.system.active) {
               return "#47b784";
           } else {
               return "orange";
@@ -327,27 +332,23 @@ Vue.component('app-menu', {
       <div class="app-menu-header">Overview</div>
 
       <div class="app-menu-header">Periodic systems</div>
-      <app-menu-system v-for="system in world.systems.active_systems"
-        :key="system.id" :system="system" :active="true"> {{system.id}}
+      <app-menu-system v-for="system in world.systems.periodic_systems"
+        :key="system.id" :system="system"> {{system.id}}
       </app-menu-system>
-      <app-menu-system v-for="system in world.systems.inactive_systems"
-        :key="system.id" :system="system" :active="false"> {{system.id}}
-      </app-menu-system>
-
       <div class="app-menu-header">Reactive systems</div>
       <app-menu-system v-for="system in world.systems.on_add_systems"
-        :key="system.id" :system="system" :active="true"> {{system.id}}
+        :key="system.id" :system="system"> {{system.id}}
       </app-menu-system>
       <app-menu-system v-for="system in world.systems.on_remove_systems"
-        :key="system.id" :system="system" :active="true"> {{system.id}}
+        :key="system.id" :system="system"> {{system.id}}
       </app-menu-system>
       <app-menu-system v-for="system in world.systems.on_set_systems"
-        :key="system.id" :system="system" :active="true"> {{system.id}}
+        :key="system.id" :system="system"> {{system.id}}
       </app-menu-system>
 
       <div class="app-menu-header">On demand systems</div>
       <app-menu-system v-for="system in world.systems.on_demand_systems"
-        :key="system.id" :system="system" :active="true"> {{system.id}}
+        :key="system.id" :system="system"> {{system.id}}
       </app-menu-system>
     </div>`
 });
@@ -357,7 +358,6 @@ var app = new Vue({
 
   methods: {
     refresh: function() {
-      console.log("REFRESH");
       const Http = new XMLHttpRequest();
       host = this.host;
       const url = "http://" + this.host + "/world"

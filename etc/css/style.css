@@ -8,30 +8,50 @@ body {
   font-size: 13px;
 }
 
-div.app-toggle-false {
+p.app-title {
+  position: absolute;
+  top: 3px;
+  left: 270px;
+  text-transform: uppercase;
+  color: #777;
+  font-size: 12px;
+  z-index: 10;
+}
+
+div.app-toggle {
   border: 1px solid #47b784;
-  color: #47b784;
   border-radius: 5px;
   text-align: center;
   text-transform: uppercase;
-  padding-top: 7px;
   height: 22px;
   width: 100px;
   display: block;
   cursor: pointer;
+  padding-top: 7px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  transition: all 0.2s;
+}
+
+div.app-toggle:hover {
+  box-shadow: 0px 0px 20px #47b784;
+}
+
+div.app-toggle-false {
+  color: #47b784;
+}
+
+div.app-toggle-in-progress {
+  background-color: #4C7F62;
+  color: #000;
 }
 
 div.app-toggle-true {
   background-color: #47b784;
   color: #000;
-  border-radius: 5px;
-  text-align: center;
-  text-transform: uppercase;
-  padding-top: 7px;
-  height: 22px;
-  width: 100px;
-  display: block;
-  cursor: pointer;
 }
 
 div.app-menu {
@@ -122,6 +142,11 @@ div.app-table h2 {
   margin-top: 5px;
   padding-bottom: 10px;
   text-transform: uppercase;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
 }
 
 table {
@@ -145,6 +170,11 @@ table th {
   padding-right: 0px;
   text-transform: uppercase;
   font-weight: 300;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
 }
 
 table td {

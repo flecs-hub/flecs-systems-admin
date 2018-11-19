@@ -44,8 +44,14 @@ void add_systems(
             if (i) {
                 ut_strbuf_appendstr(buf, ",");
             }
-            ut_strbuf_append(buf, "{\"id\":\"%s\",\"enabled\":%s}",
-                stats[i].id, stats[i].enabled ? "true" : "false");
+            ut_strbuf_append(buf,
+                "{\"id\":\"%s\",\"enabled\":%s,\"active\":%s,"\
+                "\"tables_matched\":%u,\"entities_matched\":%u}",
+                stats[i].id,
+                stats[i].enabled ? "true" : "false",
+                stats[i].active ? "true" : "false",
+                stats[i].tables_matched,
+                stats[i].entities_matched);
         }
         ut_strbuf_appendstr(buf, "]");
     }
@@ -118,8 +124,7 @@ bool request_world(
 
     bool set = false;
     ut_strbuf_appendstr(&body, "],\"systems\":{");
-    add_systems(&body, stats.active_systems, "active_systems", &set);
-    add_systems(&body, stats.inactive_systems, "inactive_systems", &set);
+    add_systems(&body, stats.periodic_systems, "periodic_systems", &set);
     add_systems(&body, stats.on_demand_systems, "on_demand_systems", &set);
     add_systems(&body, stats.on_add_systems, "on_add_systems", &set);
     add_systems(&body, stats.on_set_systems, "on_set_systems", &set);
