@@ -1,9 +1,17 @@
 var host = "";
 
+function shortenText(columns, length) {
+  if (columns.length > 30) {
+      columns = columns.slice(0, 30) + "...";
+  }
+  return columns;
+}
+
 var world_state = {
   systems: {},
   tables: {},
-  fps: []
+  fps: [],
+  memory: {}
 }
 
 const chart_data = {
@@ -25,18 +33,71 @@ const chart_data = {
     ]
   },
   options: {
+    title: {
+      text: "Performance",
+      position: "top",
+      display: true
+    },
     responsive: true,
+    maintainAspectRatio: false,
     lineTension: 1,
     scales: {
       yAxes: [{
         ticks: {
-          beginAtZero: true,
+          beginAtZero: false,
           padding: 25,
+        }
+      }],
+      xAxes: [{
+        ticks: {
+          maxTicksLimit: 20
         }
       }]
     }
   }
 }
+
+var pie_data = {
+  type: 'doughnut',
+  data: {
+    datasets: [{
+      data: [1, 1, 1, 1, 1, 1, 1],
+      backgroundColor: [
+        "#47B576",
+        "#37ABB5",
+        "#3777B5",
+        "#254BBF",
+        "#4C37B5",
+        "#7537B5",
+        "#B53FB5",
+        "#AA4462"
+      ],
+      borderColor: "black",
+      label: 'Dataset 1'
+    }],
+    labels: [
+      'Components',
+      'Entities',
+      'Systems',
+      'Families',
+      'Tables',
+      'Stage',
+      'World'
+    ]
+  },
+  options: {
+    title: {
+      text: "Memory",
+      position: "top",
+      display: true
+    },
+    legend: {
+      position: "left"
+    },
+    responsive: true,
+    maintainAspectRatio: false
+  }
+};
 
 Vue.component('app-toggle', {
   props: ['text', 'enabled', 'link'],
@@ -101,15 +162,27 @@ Vue.component('app-system-row', {
       } else {
         return "enable";
       }
+    },
+    statusText() {
+      if (this.system.enabled) {
+        if (this.system.active) {
+          return "active";
+        } else {
+          return "inactive";
+        }
+      } else {
+        return "disabled";
+      }
     }
-  },
-  data: function() {
-    return { }
   },
   template: `
     <tr>
-      <td>{{system.id}}</td>
-      <td>{{kind}}</td>
+      <td>
+        <svg height="10" width="10">
+          <circle cx="5" cy="5" r="4" stroke-width="0" :fill="enabledColor()"/>
+        </svg>
+        &nbsp;{{system.id}}
+      </td>
       <td>
         {{system.tables_matched}}
       </td>
@@ -117,9 +190,7 @@ Vue.component('app-system-row', {
         {{system.entities_matched}}
       </td>
       <td>
-        <svg height="10" width="10">
-          <circle cx="5" cy="5" r="4" stroke-width="0" :fill="enabledColor()"/>
-        </svg>
+        {{statusText()}}
       </td>
       <td>
         <app-toggle
@@ -144,19 +215,102 @@ Vue.component('app-systems', {
           <thead>
             <tr>
               <th>id</th>
-              <th>kind</th>
               <th>tables</th>
               <th>entities</th>
-              <th>enabled</th>
+              <th>status</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             <app-system-row
               v-for="system in world.systems.periodic_systems"
-              :key="system.id" :system="system" :kind="'periodic'"
+              v-if="!system.is_framework"
+              :key="system.id"
+              :system="system"
+              :kind="'periodic'"
               v-on:refresh="$emit('refresh', $event)">
             </app-system-row>
+          </tbody>
+        </table>
+      </div>
+    </div>`
+});
+
+Vue.component('app-feature-row', {
+  props: ['world', 'feature'],
+  methods: {
+    entitiesString() {
+      return shortenText(this.feature.entities, 30);
+    },
+    enabledColor() {
+      if (this.feature.systems_enabled) {
+        if (this.feature.systems_enabled == this.feature.system_count) {
+          return "#47b784";
+        } else {
+          return "orange";
+        }
+      } else {
+        return "red";
+      }
+    },
+    buttonText() {
+      if (this.feature.systems_enabled) {
+        return "disable";
+      } else {
+        return "enable";
+      }
+    }
+  },
+  template: `
+    <tr>
+      <td>
+        <svg height="10" width="10">
+          <circle cx="5" cy="5" r="4" stroke-width="0" :fill="enabledColor()"/>
+        </svg>
+        &nbsp;{{feature.id}}
+      </td>
+      <td>
+        {{entitiesString()}}
+      </td>
+      <td>
+        {{feature.systems_enabled}} / {{feature.system_count}}
+      </td>
+      <td>
+        <app-toggle
+          :text="buttonText(this.feature.systems_enabled != 0)"
+          :enabled="this.feature.systems_enabled != 0"
+          :link="'systems/' + feature.id + '?enabled=' + (this.feature.systems_enabled == 0)"
+          v-on:refresh="$emit('refresh', $event)">
+        </app-toggle>
+      </td>
+    </tr>`
+});
+
+Vue.component('app-features', {
+  props: ['world'],
+  template: `
+    <div class="app-table">
+      <div class="app-table-top">
+        <h2>features</h2>
+      </div>
+      <div class="app-table-content">
+        <table>
+          <thead>
+            <tr>
+              <th>id</th>
+              <th>systems</th>
+              <th>enabled</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <app-feature-row
+              v-for="feature in world.features"
+              v-if="!feature.is_framework"
+              :key="feature.id"
+              :feature="feature"
+              v-on:refresh="$emit('refresh', $event)">
+            </app-feature-row>
           </tbody>
         </table>
       </div>
@@ -166,19 +320,16 @@ Vue.component('app-systems', {
 Vue.component('app-table-row', {
   props: ['world', 'table'],
   methods: {
-    shortenColumns(columns) {
-      if (columns.length > 30) {
-          columns = columns.slice(0, 30) + "...";
-      }
-      return columns;
-    },
+    columnsString() {
+      return shortenText(this.table.columns, 30);
+    }
   },
   data: function() {
     return { }
   },
   template: `
   <tr>
-    <td>{{shortenColumns(table.columns)}}</td>
+    <td>{{shortenText(table.columns, 30)}}</td>
     <td>{{table.row_count}}</td>
     <td>{{table.memory_used}}</td>
     <td>{{table.memory_allocd}}</td>
@@ -216,15 +367,22 @@ Vue.component('app-world-data', {
         <table>
           <thead>
             <tr>
-              <th>memory used</th><th>memory allocated</th><th>table count</th><th>system count</th><th>entity count</th><th>thread count</th>
+              <th>component memory</th>
+              <th>total memory</th>
+              <th>in use</th>
+              <th>entities</th>
+              <th>systems</th>
+              <th>tables</th>
+              <th>threads</th>
             </tr>
           </thead>
           <tbody>
-            <td>{{world.memory_used / 1000}}KB</td>
-            <td>{{world.memory_allocd / 1000}}KB</td>
-            <td>{{world.table_count}}</td>
-            <td>{{world.system_count}}</td>
+            <td>{{world.memory.components.used / 1000}}KB</td>
+            <td>{{world.memory.total.allocd / 1000}}KB</td>
+            <td>{{world.memory.total.used / 1000}}KB</td>
             <td>{{world.entity_count}}</td>
+            <td>{{world.system_count}}</td>
+            <td>{{world.table_count}}</td>
             <td>{{world.thread_count}}</td>
           </tbody>
         </table>
@@ -232,32 +390,97 @@ Vue.component('app-world-data', {
     </div>`
 });
 
-Vue.component('app-frame-time', {
+Vue.component('app-fps-graph', {
   props: ['world'],
   mounted() {
-
     this.createChart()
+  },
+  updated() {
+    this.updateChart();
   },
   data: function() {
     return {
-      data: this.world.fps
+      chart: {}
     }
   },
   methods: {
+    setValues() {
+      var lables = [];
+      for (var i = 0; i < this.world.fps.length; i ++) {
+          lables.push(i);
+      }
+      chart_data.data.labels = lables;
+      chart_data.data.datasets[0].data = this.world.fps;
+    },
     createChart() {
       const ctx = document.getElementById('fps-graph');
-      var labels = []
-      for (var i = 0; i < this.world.fps.length; i ++) {
-          labels.push(i);
-      }
-
-      chart_data.data.labels = labels;
-      chart_data.data.datasets[0].data = this.world.fps;
-
-      const myChart = new Chart(ctx, {
+      this.setValues();
+      this.chart = new Chart(ctx, {
         type: chart_data.type,
         data: chart_data.data,
         options: chart_data.options
+      });
+    },
+    updateChart() {
+      this.setValues();
+      this.chart.update(0);
+    }
+  },
+  template: `
+    <div class="app-graph">
+      <canvas id="fps-graph" :data-fps="world.fps"></canvas>
+    </div>`
+});
+
+Vue.component('app-mem-graph', {
+  props: ['world'],
+  mounted() {
+    this.createChart()
+  },
+  updated() {
+    this.updateChart();
+  },
+  data: function() {
+    return {
+      chart: {}
+    }
+  },
+  methods: {
+    setLabels() {
+      pie_data.data.labels[0] = "Components (" + this.world.memory.components.used / 1000 + "KB)";
+      pie_data.data.labels[1] = "Entities (" + this.world.memory.entities.used / 1000 + "KB)";
+      pie_data.data.labels[2] = "Systems (" + this.world.memory.systems.used / 1000 + "KB)";
+      pie_data.data.labels[3] = "Families (" + this.world.memory.families.used / 1000 + "KB)";
+      pie_data.data.labels[4] = "Tables (" + this.world.memory.tables.used / 1000 + "KB)";
+      pie_data.data.labels[5] = "Stage (" + this.world.memory.stage.used / 1000 + "KB)";
+      pie_data.data.labels[6] = "World (" + this.world.memory.world.used / 1000 + "KB)";
+    },
+    updateValues() {
+      pie_data.data.datasets[0].data = [
+        this.world.memory.components.used,
+        this.world.memory.entities.used,
+        this.world.memory.systems.used,
+        this.world.memory.families.used,
+        this.world.memory.tables.used,
+        this.world.memory.stage.allocd,
+        this.world.memory.world.allocd
+      ];
+    },
+    updateChart() {
+      this.updateValues();
+      this.setLabels();
+      this.chart.update();
+    },
+    createChart() {
+      const ctx = document.getElementById('mem-graph');
+
+      this.updateValues();
+      this.setLabels();
+
+      this.chart = new Chart(ctx, {
+        type: pie_data.type,
+        data: pie_data.data,
+        options: pie_data.options
       });
     }
   },
@@ -265,8 +488,8 @@ Vue.component('app-frame-time', {
     return { }
   },
   template: `
-    <div class="fps">
-      <canvas id="fps-graph" height="180px"></canvas>
+    <div class="app-graph">
+      <canvas id="mem-graph" :data-memory="this.world.memory"></canvas>
     </div>`
 });
 
@@ -283,13 +506,49 @@ Vue.component('app-world', {
         <app-world-data :world="world" v-on:refresh="$emit('refresh', $event)">
         </app-world-data>
 
-        <app-frame-time :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
-        </app-frame-time>
+        <div class="app-graphs">
+          <div class="app-left">
+            <app-fps-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
+            </app-fps-graph>
+          </div>
+          <div class="app-right">
+            <app-mem-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
+            </app-mem-graph>
+          </div>
+        </div>
+
+        <app-features :world="world" v-on:refresh="$emit('refresh', $event)">
+        </app-features>
 
         <app-systems :world="world" v-on:refresh="$emit('refresh', $event)">
         </app-systems>
 
         <!--app-tables :world="world"></app-tables-->
+      </div>
+    </div>`
+});
+
+Vue.component('app-menu-feature', {
+  props: ['feature'],
+  methods: {
+    fillColor() {
+      if (this.feature.system_count == this.feature.systems_enabled) {
+          return "#47b784";
+      } else {
+          return "red";
+      }
+    }
+  },
+  data: function() {
+    return { }
+  },
+  template: `
+    <div v-if="!feature.is_framework">
+      <div class="app-menu-item">
+        <svg height="10" width="10">
+          <circle cx="5" cy="5" r="4" stroke-width="0" :fill="fillColor()"/>
+        </svg>
+        {{feature.id}}
       </div>
     </div>`
 });
@@ -313,11 +572,13 @@ Vue.component('app-menu-system', {
     return { }
   },
   template: `
-    <div class="app-menu-item">
-      <svg height="10" width="10">
-        <circle cx="5" cy="5" r="4" stroke-width="0" :fill="fillColor()"/>
-      </svg>
-      {{system.id}}
+    <div v-if="!system.is_framework">
+      <div class="app-menu-item">
+        <svg height="10" width="10">
+          <circle cx="5" cy="5" r="4" stroke-width="0" :fill="fillColor()"/>
+        </svg>
+        {{system.id}}
+      </div>
     </div>`
 });
 
@@ -331,6 +592,10 @@ Vue.component('app-menu', {
     <div class="app-menu">
       <div class="app-menu-header">Overview</div>
 
+      <div class="app-menu-header">Features</div>
+      <app-menu-feature v-for="feature in world.features"
+        :key="feature.id" :feature="feature"> {{feature.id}}
+      </app-menu-feature>
       <div class="app-menu-header">Periodic systems</div>
       <app-menu-system v-for="system in world.systems.periodic_systems"
         :key="system.id" :system="system"> {{system.id}}
@@ -365,13 +630,11 @@ var app = new Vue({
       Http.send();
       Http.onreadystatechange = (e)=>{
         if (Http.readyState == 4) {
-          this.world = JSON.parse(Http.responseText);
+          if (Http.responseText && Http.responseText.length) {
+            this.world = JSON.parse(Http.responseText);
+          }
         }
       }
-    },
-
-    toggle: function(id, enabled) {
-
     }
   },
 
@@ -383,4 +646,5 @@ var app = new Vue({
 
 window.onload = function() {
   app.refresh();
+  window.setInterval(app.refresh, 1000);
 }

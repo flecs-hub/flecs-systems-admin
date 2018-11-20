@@ -4,8 +4,7 @@
 #include <reflecs/util/time.h>
 #include <reflecs/util/stats.h>
 
-#define MEASUREMENT_COUNT (50)
-#define MEASUREMENT_INTERVAL (60)
+#define MEASUREMENT_COUNT (60)
 
 typedef struct _EcsAdminCtx {
     EcsComponentsHttpHandles http;
@@ -16,7 +15,9 @@ typedef struct _EcsAdminMeasurement {
     struct timespec time_start;
     EcsArray *values;
     uint32_t index;
+    uint32_t counter;
     uint32_t interval;
+    uint32_t recorded;
 } _EcsAdminMeasurement;
 
 const EcsArrayParams double_arr_params = {
@@ -46,12 +47,42 @@ void add_systems(
             }
             ut_strbuf_append(buf,
                 "{\"id\":\"%s\",\"enabled\":%s,\"active\":%s,"\
-                "\"tables_matched\":%u,\"entities_matched\":%u}",
+                "\"tables_matched\":%u,\"entities_matched\":%u,"\
+                "\"is_framework\":%s}",
                 stats[i].id,
                 stats[i].enabled ? "true" : "false",
                 stats[i].active ? "true" : "false",
                 stats[i].tables_matched,
-                stats[i].entities_matched);
+                stats[i].entities_matched,
+                stats[i].is_framework ? "true" : "false");
+        }
+        ut_strbuf_appendstr(buf, "]");
+    }
+}
+
+static
+void add_features(
+    ut_strbuf *buf,
+    EcsArray *features)
+{
+    uint32_t i, count = ecs_array_count(features);
+
+    if (count) {
+        ut_strbuf_append(buf, ",\"features\":[");
+        EcsFeatureStats *stats = ecs_array_buffer(features);
+        for (i = 0; i < count; i ++) {
+            if (i) {
+                ut_strbuf_appendstr(buf, ",");
+            }
+
+            ut_strbuf_append(buf,
+                "{\"id\":\"%s\",\"entities\":\"%s\",\"system_count\":%u,"\
+                "\"systems_enabled\":%u,\"is_framework\":%s}",
+                stats[i].id,
+                stats[i].entities,
+                stats[i].system_count,
+                stats[i].systems_enabled,
+                stats[i].is_framework ? "true" : "false");
         }
         ut_strbuf_appendstr(buf, "]");
     }
@@ -67,16 +98,13 @@ void add_measurements(
 
     ut_strbuf_appendstr(buf, ",\"fps\":[");
 
-    for (i = 0; i < MEASUREMENT_COUNT; i ++) {
-        if (i) {
+    uint32_t start = MEASUREMENT_COUNT - measurements->recorded;
+    for (i = start; i < MEASUREMENT_COUNT; i ++) {
+        if (i != start) {
             ut_strbuf_appendstr(buf, ",");
         }
 
         double value = values[(index + i) % MEASUREMENT_COUNT];
-        if (value) {
-            value = 1.0 / (value  / MEASUREMENT_INTERVAL);
-        }
-
         ut_strbuf_append(buf, "%.2f", value);
     }
 
@@ -100,10 +128,28 @@ bool request_world(
     ecs_world_get_stats(world, &stats);
 
     ut_strbuf_append(&body,
-        "{\"memory_used\":%u,\"memory_allocd\":%u,\"system_count\":%u,"\
+        "{\"system_count\":%u,"\
         "\"table_count\":%u,\"entity_count\":%u,\"thread_count\":%u",
-        stats.memory_used, stats.memory_allocd, stats.system_count,
-        stats.table_count, stats.entity_count, stats.thread_count);
+        stats.system_count, stats.table_count, stats.entity_count,
+        stats.thread_count);
+
+    ut_strbuf_append(&body, ",\"memory\":{"\
+        "\"total\":{\"allocd\":%u,\"used\":%u},"\
+        "\"components\":{\"allocd\":%u,\"used\":%u},"\
+        "\"entities\":{\"allocd\":%u,\"used\":%u},"\
+        "\"systems\":{\"allocd\":%u,\"used\":%u},"\
+        "\"families\":{\"allocd\":%u,\"used\":%u},"\
+        "\"tables\":{\"allocd\":%u,\"used\":%u},"\
+        "\"stage\":{\"allocd\":%u,\"used\":%u},"\
+        "\"world\":{\"allocd\":%u,\"used\":%u}}",
+        stats.memory.total.allocd, stats.memory.total.used,
+        stats.memory.components.allocd, stats.memory.components.used,
+        stats.memory.entities.allocd, stats.memory.entities.used,
+        stats.memory.systems.allocd, stats.memory.systems.used,
+        stats.memory.families.allocd, stats.memory.families.used,
+        stats.memory.tables.allocd, stats.memory.tables.used,
+        stats.memory.stage.allocd, stats.memory.stage.used,
+        stats.memory.world.allocd, stats.memory.world.used);
 
     ut_strbuf_appendstr(&body, ",\"tables\":[");
     if (ecs_array_count(stats.tables)) {
@@ -130,6 +176,8 @@ bool request_world(
     add_systems(&body, stats.on_set_systems, "on_set_systems", &set);
     add_systems(&body, stats.on_remove_systems, "on_remove_systems", &set);
     ut_strbuf_appendstr(&body, "}");
+
+    add_features(&body, stats.features);
 
     add_measurements(&body, measurements);
     ut_strbuf_appendstr(&body, "}");
@@ -226,7 +274,8 @@ void EcsAdminStart(EcsRows *rows) {
                 .ctx = &ctx->admin_measurement_handle});
 
             ecs_set(world, e_world, _EcsAdminMeasurement, {
-                .values = measurements
+                .values = measurements,
+                .interval = 1
             });
 
           EcsHandle e_systems = ecs_new(world, server);
@@ -245,18 +294,27 @@ void EcsAdminMeasureTime(EcsRows *rows) {
     void *row;
     for (row = rows->first; row < rows->last; row = ecs_next(rows, row)) {
         _EcsAdminMeasurement *data = ecs_column(rows, row, 0);
-        if ((data->interval % MEASUREMENT_INTERVAL) == 0) {
+
+        if ((data->counter % data->interval) == 0) {
             if (data->time_start.tv_sec) {
-                double *buffer = ecs_array_buffer(data->values);
-                double *t = &buffer[data->index];
-                *t = ut_time_measure(data->time_start);
-                data->index = (data->index + 1) % MEASUREMENT_COUNT;
+                double time = ut_time_measure(data->time_start);
+                if (time >= 0.8 && time <= 1.2) {
+                    double *buffer = ecs_array_buffer(data->values);
+                    double *elem = &buffer[data->index];
+                    *elem = (double)data->interval / time;
+                    data->index = (data->index + 1) % MEASUREMENT_COUNT;
+                    if (data->recorded < MEASUREMENT_COUNT) {
+                        data->recorded ++;
+                    }
+                }
+                data->counter = 0;
+                data->interval = data->interval / time;
             }
 
             ut_time_get(&data->time_start);
         }
 
-        data->interval ++;
+        data->counter ++;
     }
 }
 
@@ -292,6 +350,14 @@ void EcsSystemsAdmin(
     ecs_set_system_context(world, EcsAdminStart_h, _EcsAdminCtx, {
         .http = EcsComponentsHttp_h,
         .admin_measurement_handle = _EcsAdminMeasurement_h});
+
+    ecs_add(world, EcsAdminStart_h, EcsFrameworkSystem_h);
+    ecs_add(world, EcsAdminMeasureTime_h, EcsFrameworkSystem_h);
+    ecs_add(world, EcsAdminMeasurementDeinit_h, EcsFrameworkSystem_h);
+
+    ecs_commit(world, EcsAdminStart_h);
+    ecs_commit(world, EcsAdminMeasureTime_h);
+    ecs_commit(world, EcsAdminMeasurementDeinit_h);
 
     handles->Admin = EcsAdmin_h;
 }
