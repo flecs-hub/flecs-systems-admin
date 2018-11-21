@@ -1,5 +1,6 @@
 #include <include/admin.h>
 #include <string.h>
+#include <pthread.h>
 #include <reflecs/util/strbuf.h>
 #include <reflecs/util/time.h>
 #include <reflecs/util/stats.h>
@@ -12,12 +13,14 @@ typedef struct _EcsAdminCtx {
 } _EcsAdminCtx;
 
 typedef struct _EcsAdminMeasurement {
-    struct timespec time_start;
+    uint32_t prev_tick;
     EcsArray *values;
     uint32_t index;
     uint32_t counter;
     uint32_t interval;
     uint32_t recorded;
+    char *stats_json;
+    pthread_mutex_t lock;
 } _EcsAdminMeasurement;
 
 const EcsArrayParams double_arr_params = {
@@ -112,17 +115,11 @@ void add_measurements(
 }
 
 static
-bool request_world(
+char* collect_stats(
     EcsWorld *world,
-    EcsHandle entity,
-    EcsHttpEndpoint *endpoint,
-    EcsHttpRequest *request,
-    EcsHttpReply *reply)
+    _EcsAdminMeasurement *measurements)
 {
     ut_strbuf body = UT_STRBUF_INIT;
-    EcsHandle _EcsAdminMeasurement_h = *(EcsHandle*)endpoint->ctx;
-    _EcsAdminMeasurement *measurements =
-        ecs_get_ptr(world, entity, _EcsAdminMeasurement_h);
 
     EcsWorldStats stats = {0};
     ecs_world_get_stats(world, &stats);
@@ -160,9 +157,16 @@ bool request_world(
             if (i) {
                 ut_strbuf_append(&body, ",");
             }
+
+            if (table->id) {
+                ut_strbuf_append(&body, "{\"id\":\"%s\",", table->id);
+            } else {
+                ut_strbuf_append(&body, "{");
+            }
+
             ut_strbuf_append(&body,
-              "{\"columns\":\"%s\",\"row_count\":%u,\"memory_used\":%u,"\
-              "\"memory_allocd\":%u}",
+              "\"columns\":\"%s\",\"row_count\":%u,"
+              "\"memory_used\":%u,\"memory_allocd\":%u}",
               table->columns, table->row_count, table->memory_used,
               table->memory_allocd);
         }
@@ -170,7 +174,7 @@ bool request_world(
 
     bool set = false;
     ut_strbuf_appendstr(&body, "],\"systems\":{");
-    add_systems(&body, stats.periodic_systems, "periodic_systems", &set);
+    add_systems(&body, stats.frame_systems, "frame_systems", &set);
     add_systems(&body, stats.on_demand_systems, "on_demand_systems", &set);
     add_systems(&body, stats.on_add_systems, "on_add_systems", &set);
     add_systems(&body, stats.on_set_systems, "on_set_systems", &set);
@@ -180,11 +184,40 @@ bool request_world(
     add_features(&body, stats.features);
 
     add_measurements(&body, measurements);
+
     ut_strbuf_appendstr(&body, "}");
 
-    reply->body = ut_strbuf_get(&body);
-
     ecs_world_free_stats(world, &stats);
+
+    return ut_strbuf_get(&body);
+}
+
+static
+bool request_world(
+    EcsWorld *world,
+    EcsHandle entity,
+    EcsHttpEndpoint *endpoint,
+    EcsHttpRequest *request,
+    EcsHttpReply *reply)
+{
+    EcsHandle stats_handle = *(EcsHandle*)endpoint->ctx;
+    _EcsAdminMeasurement *stats = ecs_get_ptr(world, entity, stats_handle);
+
+    char *stats_json = NULL;
+    pthread_mutex_lock(&stats->lock);
+
+    if (stats->stats_json) {
+        stats_json = strdup(stats->stats_json);
+    }
+
+    pthread_mutex_unlock(&stats->lock);
+
+    if (!stats_json) {
+        reply->status = 204;
+        return false;
+    }
+
+    reply->body = stats_json;
 
     return true;
 }
@@ -249,6 +282,37 @@ bool request_files(
     return true;
 }
 
+void EcsAdminCollectData(EcsRows *rows) {
+    void *row;
+    double time = rows->delta_time;
+    uint32_t tick = ecs_get_tick(rows->world);
+
+    for (row = rows->first; row < rows->last; row = ecs_next(rows, row)) {
+        _EcsAdminMeasurement *data = ecs_column(rows, row, 0);
+
+        uint32_t cur_tick = tick - data->prev_tick;
+        double *buffer = ecs_array_buffer(data->values);
+        double *elem = &buffer[data->index];
+        *elem = (double)cur_tick / time;
+
+        data->index = (data->index + 1) % MEASUREMENT_COUNT;
+        if (data->recorded < MEASUREMENT_COUNT) {
+            data->recorded ++;
+        }
+
+        char *stats = collect_stats(rows->world, data);
+
+        pthread_mutex_lock(&data->lock);
+        if (data->stats_json) {
+            free(data->stats_json);
+        }
+        data->stats_json = stats;
+        pthread_mutex_unlock(&data->lock);
+
+        data->prev_tick = tick;
+    }
+}
+
 void EcsAdminStart(EcsRows *rows) {
     EcsWorld *world = rows->world;
     _EcsAdminCtx *ctx = ecs_get_system_context(world, rows->system);
@@ -266,55 +330,34 @@ void EcsAdminStart(EcsRows *rows) {
         double *buffer = ecs_array_buffer(measurements);
         memset(buffer, 0, MEASUREMENT_COUNT * sizeof(double));
 
+        pthread_mutex_t stats_lock;
+        pthread_mutex_init(&stats_lock, NULL);
+
         ecs_set(world, server, EcsHttpServer, {.port = data->port});
           EcsHandle e_world = ecs_new(world, server);
             ecs_set(world, e_world, EcsHttpEndpoint, {
                 .url = "world",
                 .action = request_world,
-                .ctx = &ctx->admin_measurement_handle});
+                .ctx = &ctx->admin_measurement_handle,
+                .synchronous = false });
 
             ecs_set(world, e_world, _EcsAdminMeasurement, {
                 .values = measurements,
-                .interval = 1
+                .interval = 1,
+                .lock = stats_lock
             });
 
           EcsHandle e_systems = ecs_new(world, server);
             ecs_set(world, e_systems, EcsHttpEndpoint, {
                 .url = "systems",
-                .action = request_systems });
+                .action = request_systems,
+                .synchronous = true });
 
           EcsHandle e_files = ecs_new(world, server);
             ecs_set(world, e_files, EcsHttpEndpoint, {
                 .url = "",
-                .action = request_files });
-    }
-}
-
-void EcsAdminMeasureTime(EcsRows *rows) {
-    void *row;
-    for (row = rows->first; row < rows->last; row = ecs_next(rows, row)) {
-        _EcsAdminMeasurement *data = ecs_column(rows, row, 0);
-
-        if ((data->counter % data->interval) == 0) {
-            if (data->time_start.tv_sec) {
-                double time = ut_time_measure(data->time_start);
-                if (time >= 0.8 && time <= 1.2) {
-                    double *buffer = ecs_array_buffer(data->values);
-                    double *elem = &buffer[data->index];
-                    *elem = (double)data->interval / time;
-                    data->index = (data->index + 1) % MEASUREMENT_COUNT;
-                    if (data->recorded < MEASUREMENT_COUNT) {
-                        data->recorded ++;
-                    }
-                }
-                data->counter = 0;
-                data->interval = data->interval / time;
-            }
-
-            ut_time_get(&data->time_start);
-        }
-
-        data->counter ++;
+                .action = request_files,
+                .synchronous = false });
     }
 }
 
@@ -343,7 +386,7 @@ void EcsSystemsAdmin(
 
     /* Start admin server when an EcsAdmin component has been initialized */
     ECS_SYSTEM(world, EcsAdminStart, EcsOnSet, EcsAdmin);
-    ECS_SYSTEM(world, EcsAdminMeasureTime, EcsPeriodic, _EcsAdminMeasurement);
+    ECS_SYSTEM(world, EcsAdminCollectData, EcsOnFrame, _EcsAdminMeasurement);
     ECS_SYSTEM(world, EcsAdminMeasurementDeinit, EcsOnRemove, _EcsAdminMeasurement);
 
     /* Make EcsComponentsHttp handles available to EcsAdminStart stystem */
@@ -351,13 +394,16 @@ void EcsSystemsAdmin(
         .http = EcsComponentsHttp_h,
         .admin_measurement_handle = _EcsAdminMeasurement_h});
 
+    /* Mark admin systems as framework systems so they don't clutter the UI */
     ecs_add(world, EcsAdminStart_h, EcsFrameworkSystem_h);
-    ecs_add(world, EcsAdminMeasureTime_h, EcsFrameworkSystem_h);
+    ecs_add(world, EcsAdminCollectData_h, EcsFrameworkSystem_h);
     ecs_add(world, EcsAdminMeasurementDeinit_h, EcsFrameworkSystem_h);
-
     ecs_commit(world, EcsAdminStart_h);
-    ecs_commit(world, EcsAdminMeasureTime_h);
+    ecs_commit(world, EcsAdminCollectData_h);
     ecs_commit(world, EcsAdminMeasurementDeinit_h);
+
+    /* Only execute data collection system once per second */
+    ecs_set_period(world, EcsAdminCollectData_h, 1.0);
 
     handles->Admin = EcsAdmin_h;
 }

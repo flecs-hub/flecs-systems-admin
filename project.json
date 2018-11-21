@@ -6,6 +6,7 @@
             "reflecs",
             "reflecs.util",
             "reflecs.components.http"
-        ]
+        ],
+        "lib": ["pthread"]
     }
 }
