@@ -19,16 +19,27 @@ var app_overview = {
     data: {
       labels: [],
       datasets: [
-        { // another line graph
+        {
+          label: 'Reflecs ratio',
+          data: [],
+          backgroundColor: [
+            '#296065'
+          ],
+          borderColor: [
+            '#37ABB5',
+          ],
+          borderWidth: 4
+        },
+        {
           label: 'FPS',
           data: [],
           backgroundColor: [
-            'rgba(71, 183,132,.6)', // Green
+            '#40805B', // Green
           ],
           borderColor: [
-            '#47b784',
+            '#47B576',
           ],
-          borderWidth: 3
+          borderWidth: 4
         }
       ]
     },
@@ -43,6 +54,7 @@ var app_overview = {
       lineTension: 1,
       scales: {
         yAxes: [{
+          id: 'y_fps',
           ticks: {
             beginAtZero: false,
             padding: 25,
@@ -199,7 +211,7 @@ Vue.component('app-system-row', {
     </tr>`
 });
 
-Vue.component('app-systems', {
+Vue.component('app-systems-table', {
   props: ['world'],
   template: `
     <div class="app-table">
@@ -207,7 +219,7 @@ Vue.component('app-systems', {
         <h2>frame systems</h2>
       </div>
       <div class="app-table-content">
-        <table>
+        <table class="last_align_right">
           <thead>
             <tr>
               <th>id</th>
@@ -217,8 +229,8 @@ Vue.component('app-systems', {
           </thead>
           <tbody>
             <app-system-row
-              v-for="system in world.systems.frame_systems"
-              v-if="!system.is_framework"
+              v-for="system in world.systems.on_frame"
+              v-if="!system.is_hidden"
               :key="system.id"
               :system="system"
               v-on:refresh="$emit('refresh', $event)">
@@ -284,7 +296,7 @@ Vue.component('app-features', {
         <h2>features</h2>
       </div>
       <div class="app-table-content">
-        <table>
+        <table class="last_align_right">
           <thead>
             <tr>
               <th>id</th>
@@ -295,7 +307,7 @@ Vue.component('app-features', {
           <tbody>
             <app-feature-row
               v-for="feature in world.features"
-              v-if="!feature.is_framework"
+              v-if="!feature.is_hidden"
               :key="feature.id"
               :feature="feature"
               v-on:refresh="$emit('refresh', $event)">
@@ -350,13 +362,19 @@ Vue.component('app-overview-fps-graph', {
   },
   methods: {
     setValues() {
-      var lables = [];
+      var labels = [];
+      var frame_pct = [];
       for (var i = 0; i < this.world.fps.length; i ++) {
-          lables.push(i);
+          labels.push(i);
+          var fps = this.world.fps[i];
+          frame_pct.push(this.world.frame[i] * fps * fps);
       }
 
-      app_overview.fps_chart.data.labels = lables;
-      app_overview.fps_chart.data.datasets[0].data = this.world.fps;
+      console.log(frame_pct);
+
+      app_overview.fps_chart.data.labels = labels;
+      app_overview.fps_chart.data.datasets[1].data = this.world.fps;
+      app_overview.fps_chart.data.datasets[0].data = frame_pct;
     },
     createChart() {
       const ctx = document.getElementById('fps-graph');
@@ -480,8 +498,8 @@ Vue.component('app-overview', {
         </div>
 
         <div class="app-right">
-          <app-systems :world="world" v-on:refresh="$emit('refresh', $event)">
-          </app-systems>
+          <app-systems-table :world="world" v-on:refresh="$emit('refresh', $event)">
+          </app-systems-table>
         </div>
       </div>
     </div>`

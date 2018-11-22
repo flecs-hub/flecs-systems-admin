@@ -220,9 +220,10 @@ div.app-toggle {
   text-transform: uppercase;
   height: 22px;
   width: 100px;
-  display: block;
+  display: inline-block;
   cursor: pointer;
   padding-top: 7px;
+  margin-left: 5px;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
@@ -286,6 +287,14 @@ table th:first-child {
   text-align: left;
 }
 
+table.last_align_right th:last-child {
+  text-align: right;
+}
+
+table.last_align_right td:last-child {
+  text-align: right;
+}
+
 table th {
   padding: 10px;
   padding-left: 0px;
@@ -313,4 +322,8 @@ table td {
   font-size: inherit;
   font-weight: 500;
   min-width: 75px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
