@@ -53,6 +53,87 @@ var app_performance = {
     }
   },
 
+  sys_1min_chart: {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        {
+          data: [],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
+          borderColor: [ '#47B576' ],
+          borderWidth: 2,
+          pointRadius: 0
+        },
+        {
+          data: [],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
+          borderColor: [ '#37ABB5' ],
+          borderWidth: 2,
+          pointRadius: 0
+        },
+        {
+          data: [],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
+          borderColor: [ '#3777B5' ],
+          borderWidth: 2,
+          pointRadius: 0
+        },
+        {
+          data: [],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
+          borderColor: [ '#254BBF' ],
+          borderWidth: 2,
+          pointRadius: 0
+        },
+        {
+          data: [],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
+          borderColor: [ '#4C37B5' ],
+          borderWidth: 2,
+          pointRadius: 0
+        },
+        {
+          data: [],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
+          borderColor: [ '#7537B5' ],
+          borderWidth: 2,
+          pointRadius: 0
+        },
+        {
+          data: [],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
+          borderColor: [ '#B53FB5' ],
+          borderWidth: 2,
+          pointRadius: 0
+        }
+      ]
+    },
+    options: {
+      title: {
+        text: "Systems (1m)",
+        position: "top",
+        display: true
+      },
+      responsive: true,
+      maintainAspectRatio: false,
+      lineTension: 1,
+      scales: {
+        yAxes: [{
+          id: 'y_fps',
+          ticks: {
+            beginAtZero: true,
+            padding: 25,
+          }
+        }],
+        xAxes: [{
+          ticks: {
+            maxTicksLimit: 20
+          }
+        }]
+      }
+    }
+  },
 
   fps_1hr_chart: {
     type: 'line',
@@ -196,7 +277,7 @@ var app_performance = {
 Vue.component('app-performance-fps-graph', {
   props: ['world'],
   mounted() {
-    this.createChart()
+    this.createChart();
   },
   updated() {
     this.updateChart();
@@ -244,7 +325,7 @@ Vue.component('app-performance-fps-graph', {
 Vue.component('app-performance-fps-1hr-graph', {
   props: ['world'],
   mounted() {
-    this.createChart()
+    this.createChart();
   },
   updated() {
     this.updateChart();
@@ -303,6 +384,59 @@ Vue.component('app-performance-fps-1hr-graph', {
   template: `
     <div class="app-graph">
       <canvas id="fps-1hr-graph" :data-fps="world.fps"></canvas>
+    </div>`
+});
+
+Vue.component('app-performance-sys-1min-graph', {
+  props: ['world'],
+  mounted() {
+    this.createChart();
+  },
+  updated() {
+    this.updateChart();
+  },
+  data: function() {
+    return {
+      chart: {}
+    }
+  },
+  methods: {
+    setValues() {
+      var labels = [];
+      var frame_pct = [];
+      var length = this.world.systems.on_frame[0].time_spent_1m.length;
+      console.log(length);
+      for (var i = 0; i < length; i ++) {
+          labels.push((length  - i) + "s");
+      }
+
+      app_performance.sys_1min_chart.data.labels = labels;
+
+      for (var i = 0; i < this.world.systems.on_frame.length; i ++) {
+          app_performance.sys_1min_chart.data.datasets[i].label = this.world.systems.on_frame[i].id;
+          app_performance.sys_1min_chart.data.datasets[i].data = this.world.systems.on_frame[i].time_spent_1m;
+          if (i == 6) {
+              break;
+          }
+      }
+    },
+    createChart() {
+      const ctx = document.getElementById('sys-1min-graph');
+      this.setValues();
+      this.chart = new Chart(ctx, {
+        type: app_performance.sys_1min_chart.type,
+        data: app_performance.sys_1min_chart.data,
+        options: app_performance.sys_1min_chart.options
+      });
+    },
+    updateChart() {
+      this.setValues();
+      this.chart.update(0);
+    }
+  },
+  template: `
+    <div class="app-graph">
+      <canvas id="sys-1min-graph" :data-fps="world.systems.on_frame"></canvas>
     </div>`
 });
 
@@ -500,6 +634,10 @@ Vue.component('app-performance', {
       </div>
 
       <div class="app-graphs">
+      <div class="app-left">
+        <app-performance-sys-1min-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
+        </app-performance-sys-1min-graph>
+      </div>
         <div class="app-right">
           <app-performance-sys-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
           </app-performance-sys-graph>
