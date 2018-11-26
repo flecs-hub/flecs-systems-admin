@@ -6,9 +6,7 @@ Vue.component('app-systems-warning', {
         v-if="is_hidden"
         height="20px"
         style="position:relative;top:6px;left:-5px;display: inline"
-        title="This is a hidden system. Hidden systems are often used for
-        internal functionality. Disabling this system may yield unexpected
-        results"/>
+        title="This is a hidden system. Hidden systems are often used for internal functionality. Disabling this system may yield unexpected results"/>
 `
 });
 
@@ -108,7 +106,10 @@ Vue.component('app-systems-system-row', {
       </td>
       <td>
         <div v-if="system.period != 0">
-          {{system.period}}
+          {{system.period.toFixed(2)}}
+        </div>
+        <div v-else>
+          -
         </div>
       </td>
       <td>

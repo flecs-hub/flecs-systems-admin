@@ -84,7 +84,6 @@ div.app-data hr {
 }
 
 div.app-graph {
-  background-color: #000;
   border-radius: 5px;
   border: 1px solid #282829;
   height: 250px;
@@ -98,7 +97,7 @@ div.app-graph-column {
 
 div.app-graphs {
   margin-top: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 40px;
 }
 
 @media (min-width: 800px) {
@@ -162,7 +161,6 @@ div.app-mem-tables {
 }
 
 div.app-table {
-  background-color: #000;
   border-radius: 5px;
   margin-top: 20px;
   padding-bottom: 0px;

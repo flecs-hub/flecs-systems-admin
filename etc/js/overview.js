@@ -20,26 +20,24 @@ var app_overview = {
       labels: [],
       datasets: [
         {
-          label: 'Reflecs ratio',
+          label: 'Systems',
           data: [],
-          backgroundColor: [
-            '#296065'
-          ],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderColor: [
             '#37ABB5',
           ],
-          borderWidth: 4
+          borderWidth: 2,
+          pointRadius: 0
         },
         {
           label: 'FPS',
           data: [],
-          backgroundColor: [
-            '#40805B', // Green
-          ],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderColor: [
             '#47B576',
           ],
-          borderWidth: 4
+          borderWidth: 2,
+          pointRadius: 0
         }
       ]
     },
@@ -56,7 +54,7 @@ var app_overview = {
         yAxes: [{
           id: 'y_fps',
           ticks: {
-            beginAtZero: false,
+            beginAtZero: true,
             padding: 25,
           }
         }],
@@ -86,7 +84,7 @@ var app_overview = {
         ],
         borderColor: "black",
         label: 'Dataset 1',
-        borderWidth: 0
+        borderWidth: 1
       }],
       labels: [
         'Components',
@@ -364,13 +362,12 @@ Vue.component('app-overview-fps-graph', {
     setValues() {
       var labels = [];
       var frame_pct = [];
-      for (var i = 0; i < this.world.fps.length; i ++) {
-          labels.push(i);
+      var length = this.world.fps.length;
+      for (var i = 0; i < length; i ++) {
+          labels.push((length  - i) + "s");
           var fps = this.world.fps[i];
           frame_pct.push(this.world.frame[i] * fps * fps);
       }
-
-      console.log(frame_pct);
 
       app_overview.fps_chart.data.labels = labels;
       app_overview.fps_chart.data.datasets[1].data = this.world.fps;

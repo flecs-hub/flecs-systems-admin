@@ -4,32 +4,37 @@
 #include <reflecs/util/strbuf.h>
 #include <reflecs/util/time.h>
 #include <reflecs/util/stats.h>
+#include <reflecs/util/ringbuf.h>
 
-#define MEASUREMENT_COUNT (20)
+#define MEASUREMENT_COUNT (60)
 
 typedef struct _EcsAdminCtx {
     EcsComponentsHttpHandles http;
     EcsHandle admin_measurement_handle;
 } _EcsAdminCtx;
 
+typedef struct Measurement {
+    EcsRingBuf *data;
+    EcsRingBuf *data_1h;
+    EcsRingBuf *min_1h;
+    EcsRingBuf *max_1h;
+} Measurement;
+
 typedef struct _EcsAdminMeasurement {
-    uint32_t prev_tick;
-    EcsArray *fps;
-    EcsArray *frame;
-    uint32_t index;
-    uint32_t counter;
+    Measurement fps;
+    Measurement frame;
+    uint32_t tick;
     uint32_t interval;
-    uint32_t recorded;
     char *stats_json;
     pthread_mutex_t lock;
 } _EcsAdminMeasurement;
 
-const EcsArrayParams double_arr_params = {
+const EcsArrayParams double_params = {
     .element_size = sizeof(double)
 };
 
 static
-void add_systems(
+void AddSystemsToJson(
     ut_strbuf *buf,
     EcsArray *systems,
     const char *json_member,
@@ -52,7 +57,8 @@ void add_systems(
             ut_strbuf_append(buf,
                 "{\"id\":\"%s\",\"enabled\":%s,\"active\":%s,"\
                 "\"tables_matched\":%u,\"entities_matched\":%u,"\
-                "\"signature\":\"%s\",\"is_hidden\":%s,\"period\":%f}",
+                "\"signature\":\"%s\",\"is_hidden\":%s,\"period\":%f,"
+                "\"time_spent\":%f}",
                 stats[i].id,
                 stats[i].enabled ? "true" : "false",
                 stats[i].active ? "true" : "false",
@@ -60,14 +66,15 @@ void add_systems(
                 stats[i].entities_matched,
                 stats[i].signature,
                 stats[i].is_hidden ? "true" : "false",
-                stats[i].period);
+                stats[i].period,
+                stats[i].time_spent);
         }
         ut_strbuf_appendstr(buf, "]");
     }
 }
 
 static
-void add_features(
+void AddFeaturesToJson(
     ut_strbuf *buf,
     EcsArray *features)
 {
@@ -95,31 +102,29 @@ void add_features(
 }
 
 static
-void add_measurements(
+void AddMeasurementsToJson(
     ut_strbuf *buf,
     const char *member,
-    _EcsAdminMeasurement *measurements,
-    double *values)
+    EcsRingBuf *values)
 {
-    uint32_t i, index = measurements->index;
-
+    uint32_t i, count = ecs_ringbuf_count(values);
     ut_strbuf_append(buf, ",\"%s\":[", member);
 
-    uint32_t start = MEASUREMENT_COUNT - measurements->recorded;
-    for (i = start; i < MEASUREMENT_COUNT; i ++) {
-        if (i != start) {
+    for (i = 0; i < count; i ++) {
+        if (i) {
             ut_strbuf_appendstr(buf, ",");
         }
+        double *value = ecs_ringbuf_get(
+            values, &double_params, i);
 
-        double value = values[(index + i) % MEASUREMENT_COUNT];
-        ut_strbuf_append(buf, "%f", value);
+        ut_strbuf_append(buf, "%f", *value);
     }
 
     ut_strbuf_appendstr(buf, "]");
 }
 
 static
-char* json_from_stats(
+char* JsonFromStats(
     EcsWorld *world,
     EcsWorldStats *stats,
     _EcsAdminMeasurement *measurements)
@@ -176,17 +181,23 @@ char* json_from_stats(
 
     bool set = false;
     ut_strbuf_appendstr(&body, "],\"systems\":{");
-    add_systems(&body, stats->frame_systems, "on_frame", &set);
-    add_systems(&body, stats->on_demand_systems, "on_demand", &set);
-    add_systems(&body, stats->on_add_systems, "on_add", &set);
-    add_systems(&body, stats->on_set_systems, "on_set", &set);
-    add_systems(&body, stats->on_remove_systems, "on_remove", &set);
+    AddSystemsToJson(&body, stats->frame_systems, "on_frame", &set);
+    AddSystemsToJson(&body, stats->on_demand_systems, "on_demand", &set);
+    AddSystemsToJson(&body, stats->on_add_systems, "on_add", &set);
+    AddSystemsToJson(&body, stats->on_set_systems, "on_set", &set);
+    AddSystemsToJson(&body, stats->on_remove_systems, "on_remove", &set);
     ut_strbuf_appendstr(&body, "}");
 
-    add_features(&body, stats->features);
+    AddFeaturesToJson(&body, stats->features);
 
-    add_measurements(&body, "fps", measurements, ecs_array_buffer(measurements->fps));
-    add_measurements(&body, "frame", measurements, ecs_array_buffer(measurements->frame));
+    AddMeasurementsToJson(&body, "fps", measurements->fps.data);
+    AddMeasurementsToJson(&body, "frame", measurements->frame.data);
+    AddMeasurementsToJson(&body, "fps_1hr", measurements->fps.data_1h);
+    AddMeasurementsToJson(&body, "frame_1hr", measurements->frame.data_1h);
+    AddMeasurementsToJson(&body, "fps_max_1hr", measurements->fps.max_1h);
+    AddMeasurementsToJson(&body, "frame_max_1hr", measurements->frame.max_1h);
+    AddMeasurementsToJson(&body, "fps_min_1hr", measurements->fps.min_1h);
+    AddMeasurementsToJson(&body, "frame_min_1hr", measurements->frame.min_1h);
 
     ut_strbuf_appendstr(&body, "}");
 
@@ -194,7 +205,7 @@ char* json_from_stats(
 }
 
 static
-bool request_world(
+bool RequestWorld(
     EcsWorld *world,
     EcsHandle entity,
     EcsHttpEndpoint *endpoint,
@@ -223,7 +234,8 @@ bool request_world(
     return true;
 }
 
-bool request_systems(
+static
+bool RequestSystems(
     EcsWorld *world,
     EcsHandle entity,
     EcsHttpEndpoint *endpoint,
@@ -250,7 +262,8 @@ bool request_systems(
     return true;
 }
 
-bool request_files(
+static
+bool RequestFiles(
     EcsWorld *world,
     EcsHandle entity,
     EcsHttpEndpoint *endpoint,
@@ -283,31 +296,60 @@ bool request_files(
     return true;
 }
 
+static
+void PushMeasurement(
+    Measurement *measurement,
+    double current)
+{
+    double *value = ecs_ringbuf_push(measurement->data_1h, &double_params);
+    double *max = ecs_ringbuf_push(measurement->max_1h, &double_params);
+    double *min = ecs_ringbuf_push(measurement->min_1h, &double_params);
+    *value = 0;
+    *max = current;
+    *min = current;
+}
+
+static
+void AddMeasurement(
+    Measurement *measurement,
+    double current,
+    uint32_t index)
+{
+    double *value = ecs_ringbuf_last(measurement->data_1h, &double_params);
+    double *max = ecs_ringbuf_last(measurement->max_1h, &double_params);
+    double *min = ecs_ringbuf_last(measurement->min_1h, &double_params);
+    *value = (*value * index + current) / (index + 1);
+    if (current > *max) *max = current;
+    if (current < *min) *min = current;
+}
+
+static
+void FreeMeasurement(
+    Measurement *measurement)
+{
+    ecs_ringbuf_free(measurement->data);
+    ecs_ringbuf_free(measurement->data_1h);
+    ecs_ringbuf_free(measurement->min_1h);
+    ecs_ringbuf_free(measurement->max_1h);
+}
+
+static
 void EcsAdminCollectData(EcsRows *rows) {
     void *row;
-    double time = rows->delta_time;
 
     EcsWorldStats stats = {0};
     ecs_get_stats(rows->world, &stats);
 
-    uint32_t tick = stats.tick_count;
-    float frame_time = stats.frame_time;
-
     for (row = rows->first; row < rows->last; row = ecs_next(rows, row)) {
         _EcsAdminMeasurement *data = ecs_column(rows, row, 0);
+        uint32_t index = ecs_ringbuf_index(data->fps.data);
 
-        double *buffer = ecs_array_buffer(data->fps);
-        buffer[data->index] = (double)tick / time;
+        double *fps_elem = ecs_ringbuf_push(data->fps.data, &double_params);
+        *fps_elem = (double)stats.tick_count / rows->delta_time;
+        double *frame_elem = ecs_ringbuf_push(data->frame.data, &double_params);
+        *frame_elem = stats.frame_time;
 
-        buffer = ecs_array_buffer(data->frame);
-        buffer[data->index] = frame_time;
-
-        data->index = (data->index + 1) % MEASUREMENT_COUNT;
-        if (data->recorded < MEASUREMENT_COUNT) {
-            data->recorded ++;
-        }
-
-        char *json = json_from_stats(rows->world, &stats, data);
+        char *json = JsonFromStats(rows->world, &stats, data);
 
         pthread_mutex_lock(&data->lock);
         if (data->stats_json) {
@@ -316,12 +358,19 @@ void EcsAdminCollectData(EcsRows *rows) {
         data->stats_json = json;
         pthread_mutex_unlock(&data->lock);
 
-        data->prev_tick = tick;
+        if (!(index % MEASUREMENT_COUNT)) {
+            PushMeasurement(&data->fps, *fps_elem);
+            PushMeasurement(&data->frame, *frame_elem);
+        }
+
+        AddMeasurement(&data->fps, *fps_elem, index);
+        AddMeasurement(&data->frame, *frame_elem, index);
     }
 
     ecs_free_stats(rows->world, &stats);
 }
 
+static
 void EcsAdminStart(EcsRows *rows) {
     EcsWorld *world = rows->world;
     _EcsAdminCtx *ctx = ecs_get_system_context(world, rows->system);
@@ -333,17 +382,6 @@ void EcsAdminStart(EcsRows *rows) {
         EcsHandle server = ecs_entity(row);
         EcsAdmin *data = ecs_column(rows, row, 0);
 
-        /* Initialize measurements array */
-        EcsArray *fps = ecs_array_new(&double_arr_params, MEASUREMENT_COUNT);
-        ecs_array_set_count(&fps, &double_arr_params, MEASUREMENT_COUNT);
-        double *buffer = ecs_array_buffer(fps);
-        memset(buffer, 0, MEASUREMENT_COUNT * sizeof(double));
-
-        EcsArray *frame = ecs_array_new(&double_arr_params, MEASUREMENT_COUNT);
-        ecs_array_set_count(&frame, &double_arr_params, MEASUREMENT_COUNT);
-        buffer = ecs_array_buffer(frame);
-        memset(buffer, 0, MEASUREMENT_COUNT * sizeof(double));
-
         pthread_mutex_t stats_lock;
         pthread_mutex_init(&stats_lock, NULL);
 
@@ -351,37 +389,44 @@ void EcsAdminStart(EcsRows *rows) {
           EcsHandle e_world = ecs_new(world, server);
             ecs_set(world, e_world, EcsHttpEndpoint, {
                 .url = "world",
-                .action = request_world,
+                .action = RequestWorld,
                 .ctx = &ctx->admin_measurement_handle,
                 .synchronous = false });
 
             ecs_set(world, e_world, _EcsAdminMeasurement, {
-                .fps = fps,
-                .frame = frame,
-                .interval = 1,
-                .lock = stats_lock
+              .fps.data = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
+              .frame.data = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
+              .fps.data_1h = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
+              .fps.min_1h = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
+              .fps.max_1h = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
+              .frame.data_1h = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
+              .frame.min_1h = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
+              .frame.max_1h = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
+              .interval = 1,
+              .lock = stats_lock
             });
 
           EcsHandle e_systems = ecs_new(world, server);
             ecs_set(world, e_systems, EcsHttpEndpoint, {
                 .url = "systems",
-                .action = request_systems,
+                .action = RequestSystems,
                 .synchronous = true });
 
           EcsHandle e_files = ecs_new(world, server);
             ecs_set(world, e_files, EcsHttpEndpoint, {
                 .url = "",
-                .action = request_files,
+                .action = RequestFiles,
                 .synchronous = false });
     }
 }
 
+static
 void EcsAdminMeasurementDeinit(EcsRows *rows) {
     void *row;
     for (row = rows->first; row < rows->last; row = ecs_next(rows, row)) {
         _EcsAdminMeasurement *ctx = ecs_column(rows, row, 0);
-        ecs_array_free(ctx->fps);
-        ecs_array_free(ctx->frame);
+        FreeMeasurement(&ctx->fps);
+        FreeMeasurement(&ctx->frame);
     }
 }
 

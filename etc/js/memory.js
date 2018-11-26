@@ -84,7 +84,7 @@ var app_mem = {
         ],
         borderColor: "black",
         label: 'Used',
-        borderWidth: 0
+        borderWidth: 1
       }],
       labels: [
         'Used',
@@ -248,7 +248,7 @@ Vue.component('app-mem-tables', {
             <tr>
               <th>family id</th>
               <th>components</th>
-              <th>rows</th>
+              <th>entities</th>
               <th>memory used</th>
               <th>memory allocated</th>
             </tr>
