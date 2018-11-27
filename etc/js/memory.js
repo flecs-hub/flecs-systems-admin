@@ -242,7 +242,7 @@ Vue.component('app-mem-tables', {
       <div class="app-table-top">
         <h2>Tables</h2>
       </div>
-      <div class="app-large-table-content">
+      <div class="app-noscroll-table-content">
         <table>
           <thead>
             <tr>
@@ -306,9 +306,13 @@ Vue.component('app-memory', {
     <div>
       <h1>Memory</h1>
       <hr>
-      <app-mem-data :world="world">
-      </app-mem-data>
-      <div class="app-graphs">
+
+      <div class="app-row">
+        <app-mem-data :world="world">
+        </app-mem-data>
+      </div>
+
+      <div class="app-fixed-row">
         <div class="app-left75">
           <app-mem-categories-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
           </app-mem-categories-graph>
@@ -318,7 +322,7 @@ Vue.component('app-memory', {
           </app-mem-total-graph>
         </div>
       </div>
-      <div class="app-mem-tables">
+      <div class="app-row">
         <app-mem-tables :world="world">
         </app-mem-tables>
       </div>

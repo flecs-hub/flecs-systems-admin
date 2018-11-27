@@ -132,7 +132,7 @@ Vue.component('app-systems-system-table', {
       <div class="app-table-top">
         <h2>{{kind}} systems</h2>
       </div>
-      <div class="app-large-table-content">
+      <div class="app-noscroll-table-content">
         <table class="last_align_right">
           <thead>
             <tr>
@@ -163,7 +163,7 @@ Vue.component('app-systems-reactive-system-table', {
       <div class="app-table-top">
         <h2>reactive systems</h2>
       </div>
-      <div class="app-large-table-content">
+      <div class="app-noscroll-table-content">
         <table>
           <thead>
             <tr>
@@ -259,7 +259,7 @@ Vue.component('app-systems-features', {
       <div class="app-table-top">
         <h2>features</h2>
       </div>
-      <div class="app-table-content">
+      <div class="app-noscroll-table-content">
         <table class="last_align_right">
           <thead>
             <tr>
@@ -339,23 +339,33 @@ Vue.component('app-systems', {
     <div>
       <h1>Systems</h1>
       <hr>
-      <app-system-data :world="world">
-      </app-system-data>
-      <app-systems-features :world="world">
-      </app-systems-features>
-      <div class="app-tables">
+
+      <div class="app-row">
+        <app-system-data :world="world">
+        </app-system-data>
+      </div>
+
+      <div class="app-row">
+        <app-systems-features :world="world">
+        </app-systems-features>
+      </div>
+
+      <div class="app-row">
         <app-systems-system-table :world="world"
           :systems="world.systems.on_frame"
           :kind="'on frame'"
           v-on:refresh="$emit('refresh', $event)">
         </app-systems-system-table>
+      </div>
 
+      <div class="app-row">
         <app-systems-system-table :world="world"
           :systems="world.systems.on_demand"
           :kind="'on demand'"
           v-on:refresh="$emit('refresh', $event)">
         </app-systems-system-table>
-
+      </div>
+      <div class="app-row">
         <app-systems-reactive-system-table :world="world"
           v-on:refresh="$emit('refresh', $event)">
         </app-systems-reactive-system-table>

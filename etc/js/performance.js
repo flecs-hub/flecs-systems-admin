@@ -318,7 +318,7 @@ Vue.component('app-performance-fps-graph', {
   },
   template: `
     <div class="app-graph">
-      <canvas id="fps-graph" :data-fps="world.fps"></canvas>
+      <canvas id="fps-graph" :data-fps="world.tick"></canvas>
     </div>`
 });
 
@@ -383,7 +383,7 @@ Vue.component('app-performance-fps-1hr-graph', {
   },
   template: `
     <div class="app-graph">
-      <canvas id="fps-1hr-graph" :data-fps="world.fps"></canvas>
+      <canvas id="fps-1hr-graph" :data-fps="world.tick"></canvas>
     </div>`
 });
 
@@ -405,7 +405,6 @@ Vue.component('app-performance-sys-1min-graph', {
       var labels = [];
       var frame_pct = [];
       var length = this.world.systems.on_frame[0].time_spent_1m.length;
-      console.log(length);
       for (var i = 0; i < length; i ++) {
           labels.push((length  - i) + "s");
       }
@@ -436,7 +435,7 @@ Vue.component('app-performance-sys-1min-graph', {
   },
   template: `
     <div class="app-graph">
-      <canvas id="sys-1min-graph" :data-fps="world.systems.on_frame"></canvas>
+      <canvas id="sys-1min-graph" :data-fps="world.tick"></canvas>
     </div>`
 });
 
@@ -513,7 +512,7 @@ Vue.component('app-performance-sys-graph', {
   },
   template: `
     <div class="app-graph">
-      <canvas id="mem-graph" :data-memory="this.world.memory"></canvas>
+      <canvas id="mem-graph" :data-memory="world.tick"></canvas>
     </div>`
 });
 
@@ -592,7 +591,7 @@ Vue.component('app-performance-system-table', {
       <div class="app-table-top">
         <h2>periodic systems</h2>
       </div>
-      <div class="app-large-table-content">
+      <div class="app-noscroll-table-content">
         <table class="last_align_right">
           <thead>
             <tr>
@@ -616,13 +615,49 @@ Vue.component('app-performance-system-table', {
     </div>`
 });
 
+Vue.component('app-perf-summary', {
+  props: ['world'],
+  methods: {
+    getLoad() {
+      var fps = this.world.fps[this.world.fps.length - 1];
+      var frame = this.world.frame[this.world.frame.length - 1];
+      return (frame * fps * 100).toFixed(2);
+    }
+  },
+  template: `
+    <div class="app-table">
+      <div class="app-table-content">
+        <table>
+          <thead>
+            <tr>
+              <th>FPS</th>
+              <th>Load %</th>
+              <th>Periodic systems</th>
+            </tr>
+          </thead>
+          <tbody>
+            <td>{{(world.fps[world.fps.length - 1]).toFixed(2)}}</td>
+            <td>{{getLoad()}}</td>
+            <td>{{world.systems.on_frame.length}}</td>
+          </tbody>
+        </table>
+      </div>
+    </div>`
+});
+
 Vue.component('app-performance', {
   props: ['world'],
   template: `
     <div>
       <h1>Performance</h1>
       <hr>
-      <div class="app-graphs">
+
+      <div class="app-row">
+        <app-perf-summary :world="world">
+        </app-perf-summary>
+      </div>
+
+      <div class="app-fixed-row">
         <div class="app-left">
           <app-performance-fps-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
           </app-performance-fps-graph>
@@ -633,18 +668,18 @@ Vue.component('app-performance', {
         </div>
       </div>
 
-      <div class="app-graphs">
-      <div class="app-left">
-        <app-performance-sys-1min-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
-        </app-performance-sys-1min-graph>
-      </div>
+      <div class="app-fixed-row">
+        <div class="app-left">
+          <app-performance-sys-1min-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
+          </app-performance-sys-1min-graph>
+        </div>
         <div class="app-right">
           <app-performance-sys-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
           </app-performance-sys-graph>
         </div>
       </div>
 
-      <div class="app-mem-tables">
+      <div class="app-row">
         <app-performance-system-table :world="world"
           :systems="world.systems.on_frame"
           v-on:refresh="$emit('refresh', $event)">

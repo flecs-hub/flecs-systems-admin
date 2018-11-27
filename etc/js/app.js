@@ -20,7 +20,6 @@ Vue.component('app-menu', {
       <div :class="cssClass('performance')" @click="nav('performance')">Performance</div>
       <div :class="cssClass('memory')" @click="nav('memory')">Memory</div>
       <div :class="cssClass('systems')" @click="nav('systems')">Systems</div>
-      <div :class="cssClass('tables')" @click="nav('tables')">Tables</div>
     </div>`
 });
 
@@ -56,7 +55,10 @@ var app = new Vue({
       Http.onreadystatechange = (e)=>{
         if (Http.readyState == 4) {
           if (Http.responseText && Http.responseText.length) {
+            var prev = this.world.tick;
+            if (!prev) prev = 0;
             this.world = JSON.parse(Http.responseText);
+            this.world.tick = prev + 1;
           }
         }
       }

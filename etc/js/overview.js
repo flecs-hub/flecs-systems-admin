@@ -316,35 +316,6 @@ Vue.component('app-features', {
     </div>`
 });
 
-Vue.component('app-world-data', {
-  props: ['world'],
-  template: `
-    <div class="app-table">
-      <div class="app-table-content">
-        <table>
-          <thead>
-            <tr>
-              <th>total memory</th>
-              <th>in use</th>
-              <th>entities</th>
-              <th>systems</th>
-              <th>tables</th>
-              <th>threads</th>
-            </tr>
-          </thead>
-          <tbody v-if="world && world.memory && world.memory.total">
-            <td>{{world.memory.total.allocd / 1000}}KB</td>
-            <td>{{world.memory.total.used / 1000}}KB</td>
-            <td>{{world.entity_count}}</td>
-            <td>{{world.system_count}}</td>
-            <td>{{world.table_count}}</td>
-            <td>{{world.thread_count}}</td>
-          </tbody>
-        </table>
-      </div>
-    </div>`
-});
-
 Vue.component('app-overview-fps-graph', {
   props: ['world'],
   mounted() {
@@ -389,7 +360,7 @@ Vue.component('app-overview-fps-graph', {
   },
   template: `
     <div class="app-graph">
-      <canvas id="fps-graph" :data-fps="world.fps"></canvas>
+      <canvas id="fps-graph" :data-fps="world.tick"></canvas>
     </div>`
 });
 
@@ -450,7 +421,7 @@ Vue.component('app-overview-mem-graph', {
   },
   template: `
     <div class="app-graph">
-      <canvas id="mem-graph" :data-memory="this.world.memory"></canvas>
+      <canvas id="mem-graph" :data-memory="this.world.tick"></canvas>
     </div>`
 });
 
@@ -468,6 +439,37 @@ Vue.component('app-border', {
     </div>`
 });
 
+Vue.component('app-world-data', {
+  props: ['world'],
+  template: `
+    <div class="app-row">
+      <div class="app-table">
+        <div class="app-table-content">
+          <table>
+            <thead>
+              <tr>
+                <th>total memory</th>
+                <th>in use</th>
+                <th>entities</th>
+                <th>systems</th>
+                <th>tables</th>
+                <th>threads</th>
+              </tr>
+            </thead>
+            <tbody v-if="world && world.memory && world.memory.total">
+              <td>{{world.memory.total.allocd / 1000}}KB</td>
+              <td>{{world.memory.total.used / 1000}}KB</td>
+              <td>{{world.entity_count}}</td>
+              <td>{{world.system_count}}</td>
+              <td>{{world.table_count}}</td>
+              <td>{{world.thread_count}}</td>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`
+});
+
 Vue.component('app-overview', {
   props: ['world'],
   template: `
@@ -477,7 +479,7 @@ Vue.component('app-overview', {
       <app-world-data :world="world" v-on:refresh="$emit('refresh', $event)">
       </app-world-data>
 
-      <div class="app-graphs">
+      <div class="app-fixed-row">
         <div class="app-left">
           <app-overview-fps-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
           </app-overview-fps-graph>
@@ -488,7 +490,7 @@ Vue.component('app-overview', {
         </div>
       </div>
 
-      <div class="app-tables">
+      <div class="app-row">
         <div class="app-left">
           <app-features :world="world" v-on:refresh="$emit('refresh', $event)">
           </app-features>

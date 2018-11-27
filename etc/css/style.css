@@ -39,7 +39,7 @@ div.app-menu {
   box-sizing: border-box;
   top: 10px;
   left: 10px;
-  width: 200px;
+  width: 170px;
   height: calc(100% - 10px);
   background-color: #121213;
   padding-left: 20px;
@@ -52,8 +52,8 @@ div.app-data {
   position: absolute;
   box-sizing: border-box;
   top: 10px;
-  left: 210px;
-  width: calc(100% - 210px);
+  left: 180px;
+  width: calc(100% - 180px);
   height: calc(100% - 10px);
   padding-left: 20px;
   padding-right: 20px;
@@ -83,86 +83,97 @@ div.app-data hr {
   border: 0.5px solid #282829;
 }
 
-div.app-graph {
-  border-radius: 5px;
-  border: 1px solid #282829;
-  height: 250px;
-  padding: 10px;
+div.app-fixed-row {
+  margin-top: 20px;
 }
 
-div.app-graph-column {
+div.app-row {
   margin-top: 20px;
-  margin-bottom: 20px;
 }
 
-div.app-graphs {
-  margin-top: 20px;
-  margin-bottom: 40px;
+div.app-left {
+}
+
+div.app-right {
+}
+
+div.app-fullscreen {
+  position: absolute;
+  background-color: #000;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  border: none !important;
 }
 
 @media (min-width: 800px) {
-  div.app-graphs {
-    position: relative;
+  div.app-fixed-row {
     height: 250px;
   }
-  div.app-tables {
-    position: relative;
+  div.app-row {
+  }
+  div.app-fixed-row::after {
+    content: "";
+    clear: both;
+    display: table;
+  }
+  div.app-row::after {
+    content: "";
+    clear: both;
+    display: table;
   }
   div.app-left {
-    position: absolute;
-    top: 0px;
+    float: left;
     width: calc(50% - 10px);
-    height: 100%;
   }
   div.app-right {
-    position: absolute;
-    top: 0px;
-    right: 0px;
+    float: right;
     width: calc(50% - 10px);
-    height: 100%;
   }
   div.app-left75 {
-    position: absolute;
-    top: 0px;
+    float: left;
     width: calc(75% - 10px);
-    height: 100%;
   }
   div.app-right25 {
-    position: absolute;
-    top: 0px;
-    right: 0px;
+    float: right;
     width: calc(25% - 10px);
-    height: 100%;
   }
 }
 @media (max-width: 800px) {
-  div.app-graphs {
+  div.app-fixed-row {
   }
-  div.app-tables {
+  div.app-row {
+  }
+  div.app-fixed-row div.app-left,div.app-right,div.app-left75,div.app-right25 {
+    height: 250px;
   }
   div.app-left {
     width: 100%;
-    margin-bottom: 20px;
   }
   div.app-right {
     width: 100%;
+    margin-top: 20px;
   }
-  div.app-left8 {
+  div.app-left75 {
     width: 100%;
-    margin-bottom: 20px;
   }
-  div.app-right2 {
+  div.app-right25 {
     width: 100%;
+    margin-top: 20px;
   }
 }
 
-div.app-mem-tables {
-  margin-top: 40px;
+div.app-graph {
+  border-radius: 5px;
+  border: 1px solid #282829;
+  padding-left: 5px;
+  padding-right: 5px;
+  height: 100%;
 }
 
 div.app-table {
   border-radius: 5px;
-  margin-top: 20px;
   padding-bottom: 0px;
   border: 1px solid #282829;
 }
@@ -193,6 +204,13 @@ div.app-large-table-content {
   border-bottom-right-radius: 5px;
   max-height: 400px;
   overflow-y: auto;
+  padding-left: 40px;
+  padding-right: 40px;
+}
+
+div.app-noscroll-table-content {
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
   padding-left: 40px;
   padding-right: 40px;
 }
