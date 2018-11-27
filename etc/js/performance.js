@@ -621,10 +621,6 @@ Vue.component('app-perf-summary', {
     this.$refs.frame_profiling_input.checked = this.world.frame_profiling;
     this.$refs.system_profiling_input.checked = this.world.system_profiling;
   },
-  updated() {
-    this.$refs.frame_profiling_input.checked = this.world.frame_profiling;
-    this.$refs.system_profiling_input.checked = this.world.system_profiling;
-  },
   methods: {
     getLoad() {
       var fps = this.world.fps[this.world.fps.length - 1];
