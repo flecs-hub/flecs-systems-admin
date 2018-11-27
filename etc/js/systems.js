@@ -16,7 +16,7 @@ Vue.component('app-systems-reactive-system-row', {
     enabledColor() {
       if (this.system.enabled) {
         if (this.system.active) {
-          return "#47b784";
+          return "#5BE595";
         } else {
           return "orange";
         }
@@ -63,7 +63,7 @@ Vue.component('app-systems-system-row', {
     enabledColor() {
       if (this.system.enabled) {
         if (this.system.active) {
-          return "#47b784";
+          return "#5BE595";
         } else {
           return "orange";
         }
@@ -106,10 +106,10 @@ Vue.component('app-systems-system-row', {
       </td>
       <td>
         <div v-if="system.period != 0">
-          {{system.period.toFixed(2)}}
+          {{system.period.toFixed(2)}}s
         </div>
         <div v-else>
-          -
+          each frame
         </div>
       </td>
       <td>
@@ -209,7 +209,7 @@ Vue.component('app-systems-feature-row', {
     enabledColor() {
       if (this.feature.systems_enabled) {
         if (this.feature.systems_enabled == this.feature.system_count) {
-          return "#47b784";
+          return "#5BE595";
         } else {
           return "orange";
         }
@@ -365,6 +365,7 @@ Vue.component('app-systems', {
           v-on:refresh="$emit('refresh', $event)">
         </app-systems-system-table>
       </div>
+
       <div class="app-row">
         <app-systems-reactive-system-table :world="world"
           v-on:refresh="$emit('refresh', $event)">

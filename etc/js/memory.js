@@ -6,13 +6,13 @@ var app_mem = {
       datasets: [{
         data: [1, 1, 1, 1, 1, 1, 1],
         backgroundColor: [
-          "#47B576",
-          "#37ABB5",
-          "#3777B5",
-          "#254BBF",
-          "#4C37B5",
-          "#7537B5",
-          "#B53FB5"
+          "#5BE595",
+          "#46D9E6",
+          "#4596E5",
+          "#2D5BE6",
+          "#6146E6",
+          "#9546E5",
+          "#E550E6"
         ],
         borderColor: "black",
         label: 'Used'
@@ -79,7 +79,7 @@ var app_mem = {
       datasets: [{
         data: [1, 1],
         backgroundColor: [
-          "#254BBF",
+          "#2D5BE6",
           "#273C7F"
         ],
         borderColor: "black",

@@ -10,7 +10,7 @@ var app_performance = {
           data: [],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderColor: [
-            '#37ABB5',
+            '#46D9E6',
           ],
           borderWidth: 2,
           pointRadius: 0
@@ -20,7 +20,7 @@ var app_performance = {
           data: [],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderColor: [
-            '#47B576',
+            '#5BE595',
           ],
           borderWidth: 2,
           pointRadius: 0
@@ -61,49 +61,49 @@ var app_performance = {
         {
           data: [],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderColor: [ '#47B576' ],
+          borderColor: [ '#5BE595' ],
           borderWidth: 2,
           pointRadius: 0
         },
         {
           data: [],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderColor: [ '#37ABB5' ],
+          borderColor: [ '#46D9E6' ],
           borderWidth: 2,
           pointRadius: 0
         },
         {
           data: [],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderColor: [ '#3777B5' ],
+          borderColor: [ '#4596E5' ],
           borderWidth: 2,
           pointRadius: 0
         },
         {
           data: [],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderColor: [ '#254BBF' ],
+          borderColor: [ '#2D5BE6' ],
           borderWidth: 2,
           pointRadius: 0
         },
         {
           data: [],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderColor: [ '#4C37B5' ],
+          borderColor: [ '#6146E6' ],
           borderWidth: 2,
           pointRadius: 0
         },
         {
           data: [],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderColor: [ '#7537B5' ],
+          borderColor: [ '#9546E5' ],
           borderWidth: 2,
           pointRadius: 0
         },
         {
           data: [],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderColor: [ '#B53FB5' ],
+          borderColor: [ '#E550E6' ],
           borderWidth: 2,
           pointRadius: 0
         }
@@ -144,7 +144,7 @@ var app_performance = {
           label: 'Systems (min)',
           data: [],
           borderColor: [
-            '#37ABB5'
+            '#46D9E6'
           ],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderWidth: 1,
@@ -164,7 +164,7 @@ var app_performance = {
           label: 'FPS (min)',
           data: [],
           borderColor: [
-            '#47B576', // Green
+            '#5BE595', // Green
           ],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderWidth: 1,
@@ -185,7 +185,7 @@ var app_performance = {
           data: [],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderColor: [
-            '#37ABB5',
+            '#46D9E6',
           ],
           borderWidth: 2,
           pointRadius: 0
@@ -195,7 +195,7 @@ var app_performance = {
           data: [],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderColor: [
-            '#47B576',
+            '#5BE595',
           ],
           borderWidth: 2,
           pointRadius: 0
@@ -236,13 +236,13 @@ var app_performance = {
       datasets: [{
         data: [1, 1, 1, 1, 1, 1, 1],
         backgroundColor: [
-          "#47B576",
-          "#37ABB5",
-          "#3777B5",
-          "#254BBF",
-          "#4C37B5",
-          "#7537B5",
-          "#B53FB5",
+          "#5BE595",
+          "#46D9E6",
+          "#4596E5",
+          "#2D5BE6",
+          "#6146E6",
+          "#9546E5",
+          "#E550E6",
           "#AA4462"
         ],
         borderColor: "black",
@@ -522,7 +522,7 @@ Vue.component('app-performance-system-row', {
     enabledColor() {
       if (this.system.enabled) {
         if (this.system.active) {
-          return "#47b784";
+          return "#5BE595";
         } else {
           return "orange";
         }
@@ -562,10 +562,10 @@ Vue.component('app-performance-system-row', {
       </td>
       <td>
         <div v-if="system.period != 0">
-          {{system.period.toFixed(2)}}
+          {{system.period.toFixed(2)}}s
         </div>
         <div v-else>
-          -
+          each frame
         </div>
       </td>
       <td>
@@ -617,11 +617,39 @@ Vue.component('app-performance-system-table', {
 
 Vue.component('app-perf-summary', {
   props: ['world'],
+  mounted() {
+    this.$refs.frame_profiling_input.checked = this.world.frame_profiling;
+    this.$refs.system_profiling_input.checked = this.world.system_profiling;
+  },
+  updated() {
+    this.$refs.frame_profiling_input.checked = this.world.frame_profiling;
+    this.$refs.system_profiling_input.checked = this.world.system_profiling;
+  },
   methods: {
     getLoad() {
       var fps = this.world.fps[this.world.fps.length - 1];
       var frame = this.world.frame[this.world.frame.length - 1];
       return (frame * fps * 100).toFixed(2);
+    },
+    set_frame_profiling(el) {
+      const Http = new XMLHttpRequest();
+      const url = "http://" + host + "/world?frame_profiling=" + el.checked;
+      Http.open("POST", url);
+      Http.send();
+      Http.onreadystatechange = (e)=>{
+        if (Http.readyState == 4) {
+        }
+      }
+    },
+    set_system_profiling(el) {
+      const Http = new XMLHttpRequest();
+      const url = "http://" + host + "/world?system_profiling=" + el.checked;
+      Http.open("POST", url);
+      Http.send();
+      Http.onreadystatechange = (e)=>{
+        if (Http.readyState == 4) {
+        }
+      }
     }
   },
   template: `
@@ -633,12 +661,30 @@ Vue.component('app-perf-summary', {
               <th>FPS</th>
               <th>Load %</th>
               <th>Periodic systems</th>
+              <th>Frame profiling</th>
+              <th>System profiling</th>
             </tr>
           </thead>
           <tbody>
             <td>{{(world.fps[world.fps.length - 1]).toFixed(2)}}</td>
             <td>{{getLoad()}}</td>
             <td>{{world.systems.on_frame.length}}</td>
+            <td>
+              <label class="switch">
+                <input type="checkbox"
+                  ref="frame_profiling_input"
+                  v-on:change="set_frame_profiling($event.target)">
+                <span class="slider round"></span>
+              </label>
+            </td>
+            <td>
+              <label class="switch">
+                <input type="checkbox"
+                  ref="system_profiling_input"
+                  v-on:change="set_system_profiling($event.target)">
+                <span class="slider round"></span>
+              </label>
+            </td>
           </tbody>
         </table>
       </div>

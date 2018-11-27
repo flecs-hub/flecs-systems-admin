@@ -24,7 +24,7 @@ var app_overview = {
           data: [],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderColor: [
-            '#37ABB5',
+            '#46D9E6',
           ],
           borderWidth: 2,
           pointRadius: 0
@@ -34,7 +34,7 @@ var app_overview = {
           data: [],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderColor: [
-            '#47B576',
+            '#5BE595',
           ],
           borderWidth: 2,
           pointRadius: 0
@@ -73,13 +73,13 @@ var app_overview = {
       datasets: [{
         data: [1, 1, 1, 1, 1, 1, 1],
         backgroundColor: [
-          "#47B576",
-          "#37ABB5",
-          "#3777B5",
-          "#254BBF",
-          "#4C37B5",
-          "#7537B5",
-          "#B53FB5",
+          "#5BE595",
+          "#46D9E6",
+          "#4596E5",
+          "#2D5BE6",
+          "#6146E6",
+          "#9546E5",
+          "#E550E6",
           "#AA4462"
         ],
         borderColor: "black",
@@ -160,7 +160,7 @@ Vue.component('app-system-row', {
     enabledColor() {
       if (this.system.enabled) {
         if (this.system.active) {
-          return "#47b784";
+          return "#5BE595";
         } else {
           return "orange";
         }
@@ -248,7 +248,7 @@ Vue.component('app-feature-row', {
     enabledColor() {
       if (this.feature.systems_enabled) {
         if (this.feature.systems_enabled == this.feature.system_count) {
-          return "#47b784";
+          return "#5BE595";
         } else {
           return "orange";
         }

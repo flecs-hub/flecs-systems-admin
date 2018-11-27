@@ -150,9 +150,12 @@ char* JsonFromStats(
 
     ut_strbuf_append(&body,
         "{\"system_count\":%u,"\
-        "\"table_count\":%u,\"entity_count\":%u,\"thread_count\":%u",
+        "\"table_count\":%u,\"entity_count\":%u,\"thread_count\":%u"
+        ",\"frame_profiling\":%s,\"system_profiling\":%s",
         stats->system_count, stats->table_count, stats->entity_count,
-        stats->thread_count);
+        stats->thread_count,
+        stats->frame_profiling ? "true" : "false",
+        stats->system_profiling ? "true" : "false");
 
     ut_strbuf_append(&body, ",\"memory\":{"\
         "\"total\":{\"allocd\":%u,\"used\":%u},"\
@@ -222,7 +225,7 @@ char* JsonFromStats(
     return ut_strbuf_get(&body);
 }
 
-/* HTTP endpoint that returns statistics for the world */
+/* HTTP endpoint that returns statistics for the world & configures world */
 static
 bool RequestWorld(
     EcsWorld *world,
@@ -231,24 +234,37 @@ bool RequestWorld(
     EcsHttpRequest *request,
     EcsHttpReply *reply)
 {
-    EcsHandle stats_handle = *(EcsHandle*)endpoint->ctx;
-    _EcsAdminMeasurement *stats = ecs_get_ptr(world, entity, stats_handle);
+    if (request->method == EcsHttpGet) {
+        EcsHandle stats_handle = *(EcsHandle*)endpoint->ctx;
+        _EcsAdminMeasurement *stats = ecs_get_ptr(world, entity, stats_handle);
 
-    char *stats_json = NULL;
-    pthread_mutex_lock(&stats->lock);
+        char *stats_json = NULL;
+        pthread_mutex_lock(&stats->lock);
 
-    if (stats->stats_json) {
-        stats_json = strdup(stats->stats_json);
+        if (stats->stats_json) {
+            stats_json = strdup(stats->stats_json);
+        }
+
+        pthread_mutex_unlock(&stats->lock);
+
+        if (!stats_json) {
+            reply->status = 204;
+            return false;
+        }
+
+        reply->body = stats_json;
+
+    } else if (request->method == EcsHttpPost) {
+        if (!strcmp(request->params, "frame_profiling=true")) {
+            ecs_measure_frame_time(world, true);
+        } else if (!strcmp(request->params, "frame_profiling=false")) {
+            ecs_measure_frame_time(world, false);
+        } else if (!strcmp(request->params, "system_profiling=true")) {
+            ecs_measure_system_time(world, true);
+        } else if (!strcmp(request->params, "system_profiling=false")) {
+            ecs_measure_system_time(world, false);
+        }
     }
-
-    pthread_mutex_unlock(&stats->lock);
-
-    if (!stats_json) {
-        reply->status = 204;
-        return false;
-    }
-
-    reply->body = stats_json;
 
     return true;
 }
@@ -388,7 +404,12 @@ void EcsAdminCollectData(EcsRows *rows) {
         uint32_t index = ecs_ringbuf_index(data->fps.data);
 
         double *fps_elem = ecs_ringbuf_push(data->fps.data, &double_params);
-        *fps_elem = (double)stats.tick_count / rows->delta_time;
+        if (rows->delta_time) {
+            *fps_elem = (double)stats.tick_count / rows->delta_time;
+        } else {
+            *fps_elem = 0;
+        }
+
         double *frame_elem = ecs_ringbuf_push(data->frame.data, &double_params);
         *frame_elem = stats.frame_time;
 
