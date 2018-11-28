@@ -384,7 +384,7 @@ Vue.component('app-overview-mem-graph', {
       app_overview.mem_chart.data.labels[2] = "Systems (" + this.world.memory.systems.used / 1000 + "KB)";
       app_overview.mem_chart.data.labels[3] = "Families (" + this.world.memory.families.used / 1000 + "KB)";
       app_overview.mem_chart.data.labels[4] = "Tables (" + this.world.memory.tables.used / 1000 + "KB)";
-      app_overview.mem_chart.data.labels[5] = "Stage (" + this.world.memory.stage.used / 1000 + "KB)";
+      app_overview.mem_chart.data.labels[5] = "Stage (" + this.world.memory.stage.allocd / 1000 + "KB)";
       app_overview.mem_chart.data.labels[6] = "World (" + this.world.memory.world.used / 1000 + "KB)";
     },
     updateValues() {
