@@ -10,7 +10,7 @@
     <div id="app">
       <app-border :world="world"></app-border>
       <app-menu :world="world" :app="app" v-on:nav="nav"></app-menu>
-      <app-data :world="world" :app="app" v-on:refresh="refresh"></app-data>
+      <app-data ref="data" :world="world" :app="app" v-on:refresh="refresh"></app-data>
     </div>
 
     <script src="js/vue.js"></script>

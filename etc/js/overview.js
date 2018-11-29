@@ -20,16 +20,6 @@ var app_overview = {
       labels: [],
       datasets: [
         {
-          label: 'Systems',
-          data: [],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderColor: [
-            '#46D9E6',
-          ],
-          borderWidth: 2,
-          pointRadius: 0
-        },
-        {
           label: 'FPS',
           data: [],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
@@ -37,13 +27,47 @@ var app_overview = {
             '#5BE595',
           ],
           borderWidth: 2,
-          pointRadius: 0
+          pointRadius: 0,
+          yAxisID: "fps"
+        },
+        {
+          label: 'Systems %',
+          data: [],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
+          borderColor: [
+            '#46D9E6',
+          ],
+          borderWidth: 2,
+          pointRadius: 0,
+          yAxisID: "pct"
+        },
+        {
+          label: 'Merging %',
+          data: [],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
+          borderColor: [
+            '#E550E6',
+          ],
+          borderWidth: 2,
+          pointRadius: 0,
+          yAxisID: "pct"
+        },
+        {
+          label: 'Total %',
+          data: [],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
+          borderColor: [
+            '#6146E6',
+          ],
+          borderWidth: 2,
+          pointRadius: 0,
+          yAxisID: "pct"
         }
       ]
     },
     options: {
       title: {
-        text: "Performance",
+        text: "Load (1m)",
         position: "top",
         display: true
       },
@@ -52,10 +76,24 @@ var app_overview = {
       lineTension: 1,
       scales: {
         yAxes: [{
-          id: 'y_fps',
+          id: 'fps',
           ticks: {
             beginAtZero: true,
             padding: 25,
+            callback: function(value, index, values) {
+                return value + "Hz";
+            }
+          }
+        }, {
+          id: 'pct',
+          position: 'right',
+          ticks: {
+            beginAtZero: true,
+            padding: 10,
+            suggestedMax: 100,
+            callback: function(value, index, values) {
+                return value + "%";
+            }
           }
         }],
         xAxes: [{
@@ -110,6 +148,118 @@ var app_overview = {
     }
   }
 }
+
+Vue.component('app-overview-fps-graph', {
+  props: ['world'],
+  mounted() {
+    this.createChart()
+  },
+  updated() {
+    this.updateChart();
+  },
+  data: function() {
+    return {
+      chart: {}
+    }
+  },
+  methods: {
+    setValues() {
+      var labels = [];
+      var merge = [];
+      var length = this.world.fps.length;
+      for (var i = 0; i < length; i ++) {
+          labels.push((length  - i) + "s");
+          var frame = this.world.frame[i];
+          var system = this.world.system[i];
+          merge.push(frame - system);
+      }
+
+      app_overview.fps_chart.data.labels = labels;
+      app_overview.fps_chart.data.datasets[0].data = this.world.fps;
+      app_overview.fps_chart.data.datasets[1].data = this.world.system;
+      app_overview.fps_chart.data.datasets[2].data = merge;
+      app_overview.fps_chart.data.datasets[3].data = this.world.frame;
+    },
+    createChart() {
+      const ctx = document.getElementById('fps-graph');
+      this.setValues();
+      this.chart = new Chart(ctx, {
+        type: app_overview.fps_chart.type,
+        data: app_overview.fps_chart.data,
+        options: app_overview.fps_chart.options
+      });
+    },
+    updateChart() {
+      this.setValues();
+      this.chart.update(0);
+    }
+  },
+  template: `
+    <div class="app-graph">
+      <canvas id="fps-graph" :data-fps="world.tick"></canvas>
+    </div>`
+});
+
+Vue.component('app-overview-mem-graph', {
+  props: ['world'],
+  mounted() {
+    this.createChart()
+  },
+  updated() {
+    this.updateChart();
+  },
+  data: function() {
+    return {
+      chart: {}
+    }
+  },
+  methods: {
+    setLabels() {
+      app_overview.mem_chart.data.labels[0] = "Components (" + this.world.memory.components.used / 1000 + "KB)";
+      app_overview.mem_chart.data.labels[1] = "Entities (" + this.world.memory.entities.used / 1000 + "KB)";
+      app_overview.mem_chart.data.labels[2] = "Systems (" + this.world.memory.systems.used / 1000 + "KB)";
+      app_overview.mem_chart.data.labels[3] = "Families (" + this.world.memory.families.used / 1000 + "KB)";
+      app_overview.mem_chart.data.labels[4] = "Tables (" + this.world.memory.tables.used / 1000 + "KB)";
+      app_overview.mem_chart.data.labels[5] = "Stage (" + this.world.memory.stage.allocd / 1000 + "KB)";
+      app_overview.mem_chart.data.labels[6] = "World (" + this.world.memory.world.used / 1000 + "KB)";
+    },
+    updateValues() {
+      app_overview.mem_chart.data.datasets[0].data = [
+        this.world.memory.components.used,
+        this.world.memory.entities.used,
+        this.world.memory.systems.used,
+        this.world.memory.families.used,
+        this.world.memory.tables.used,
+        this.world.memory.stage.allocd,
+        this.world.memory.world.allocd
+      ];
+    },
+    updateChart() {
+      this.updateValues();
+      this.setLabels();
+      this.chart.update();
+    },
+    createChart() {
+      const ctx = document.getElementById('mem-graph');
+
+      this.updateValues();
+      this.setLabels();
+
+      this.chart = new Chart(ctx, {
+        type: app_overview.mem_chart.type,
+        data: app_overview.mem_chart.data,
+        options: app_overview.mem_chart.options
+      });
+    }
+  },
+  data: function() {
+    return { }
+  },
+  template: `
+    <div class="app-graph">
+      <canvas id="mem-graph" :data-memory="this.world.tick"></canvas>
+    </div>`
+});
 
 Vue.component('app-toggle', {
   props: ['text', 'enabled', 'link'],
@@ -214,9 +364,9 @@ Vue.component('app-systems-table', {
   template: `
     <div class="app-table">
       <div class="app-table-top">
-        <h2>frame systems</h2>
+        <h2>systems</h2>
       </div>
-      <div class="app-table-content">
+      <div class="app-noscroll-table-content">
         <table class="last_align_right">
           <thead>
             <tr>
@@ -293,7 +443,7 @@ Vue.component('app-features', {
       <div class="app-table-top">
         <h2>features</h2>
       </div>
-      <div class="app-table-content">
+      <div class="app-noscroll-table-content">
         <table class="last_align_right">
           <thead>
             <tr>
@@ -313,115 +463,6 @@ Vue.component('app-features', {
           </tbody>
         </table>
       </div>
-    </div>`
-});
-
-Vue.component('app-overview-fps-graph', {
-  props: ['world'],
-  mounted() {
-    this.createChart()
-  },
-  updated() {
-    this.updateChart();
-  },
-  data: function() {
-    return {
-      chart: {}
-    }
-  },
-  methods: {
-    setValues() {
-      var labels = [];
-      var frame_pct = [];
-      var length = this.world.fps.length;
-      for (var i = 0; i < length; i ++) {
-          labels.push((length  - i) + "s");
-          var fps = this.world.fps[i];
-          frame_pct.push(this.world.frame[i] * fps * fps);
-      }
-
-      app_overview.fps_chart.data.labels = labels;
-      app_overview.fps_chart.data.datasets[1].data = this.world.fps;
-      app_overview.fps_chart.data.datasets[0].data = frame_pct;
-    },
-    createChart() {
-      const ctx = document.getElementById('fps-graph');
-      this.setValues();
-      this.chart = new Chart(ctx, {
-        type: app_overview.fps_chart.type,
-        data: app_overview.fps_chart.data,
-        options: app_overview.fps_chart.options
-      });
-    },
-    updateChart() {
-      this.setValues();
-      this.chart.update(0);
-    }
-  },
-  template: `
-    <div class="app-graph">
-      <canvas id="fps-graph" :data-fps="world.tick"></canvas>
-    </div>`
-});
-
-Vue.component('app-overview-mem-graph', {
-  props: ['world'],
-  mounted() {
-    this.createChart()
-  },
-  updated() {
-    this.updateChart();
-  },
-  data: function() {
-    return {
-      chart: {}
-    }
-  },
-  methods: {
-    setLabels() {
-      app_overview.mem_chart.data.labels[0] = "Components (" + this.world.memory.components.used / 1000 + "KB)";
-      app_overview.mem_chart.data.labels[1] = "Entities (" + this.world.memory.entities.used / 1000 + "KB)";
-      app_overview.mem_chart.data.labels[2] = "Systems (" + this.world.memory.systems.used / 1000 + "KB)";
-      app_overview.mem_chart.data.labels[3] = "Families (" + this.world.memory.families.used / 1000 + "KB)";
-      app_overview.mem_chart.data.labels[4] = "Tables (" + this.world.memory.tables.used / 1000 + "KB)";
-      app_overview.mem_chart.data.labels[5] = "Stage (" + this.world.memory.stage.allocd / 1000 + "KB)";
-      app_overview.mem_chart.data.labels[6] = "World (" + this.world.memory.world.used / 1000 + "KB)";
-    },
-    updateValues() {
-      app_overview.mem_chart.data.datasets[0].data = [
-        this.world.memory.components.used,
-        this.world.memory.entities.used,
-        this.world.memory.systems.used,
-        this.world.memory.families.used,
-        this.world.memory.tables.used,
-        this.world.memory.stage.allocd,
-        this.world.memory.world.allocd
-      ];
-    },
-    updateChart() {
-      this.updateValues();
-      this.setLabels();
-      this.chart.update();
-    },
-    createChart() {
-      const ctx = document.getElementById('mem-graph');
-
-      this.updateValues();
-      this.setLabels();
-
-      this.chart = new Chart(ctx, {
-        type: app_overview.mem_chart.type,
-        data: app_overview.mem_chart.data,
-        options: app_overview.mem_chart.options
-      });
-    }
-  },
-  data: function() {
-    return { }
-  },
-  template: `
-    <div class="app-graph">
-      <canvas id="mem-graph" :data-memory="this.world.tick"></canvas>
     </div>`
 });
 
@@ -448,20 +489,18 @@ Vue.component('app-world-data', {
           <table>
             <thead>
               <tr>
-                <th>total memory</th>
-                <th>in use</th>
+                <th>fps</th>
+                <th>load</th>
+                <th>memory</th>
                 <th>entities</th>
-                <th>systems</th>
-                <th>tables</th>
                 <th>threads</th>
               </tr>
             </thead>
             <tbody v-if="world && world.memory && world.memory.total">
-              <td>{{world.memory.total.allocd / 1000}}KB</td>
-              <td>{{world.memory.total.used / 1000}}KB</td>
+              <td>{{(world.fps[world.fps.length - 1]).toFixed(2)}}Hz</td>
+              <td>{{(world.frame[world.frame.length - 1]).toFixed(2)}}%</td>
+              <td>{{(world.memory.total.allocd / 1000).toFixed(2)}}KB</td>
               <td>{{world.entity_count}}</td>
-              <td>{{world.system_count}}</td>
-              <td>{{world.table_count}}</td>
               <td>{{world.thread_count}}</td>
             </tbody>
           </table>
@@ -472,8 +511,21 @@ Vue.component('app-world-data', {
 
 Vue.component('app-overview', {
   props: ['world'],
+  data: function() {
+    return {
+        active: false
+    }
+  },
+  mounted() {
+    setTimeout(function() {
+      this.active = true;
+    }.bind(this), 1);
+  },
+  beforeDestroy() {
+    this.active = false;
+  },
   template: `
-    <div>
+    <div :class="'app app-active-' + active">
       <h1>Overview</h1>
       <hr>
       <app-world-data :world="world" v-on:refresh="$emit('refresh', $event)">

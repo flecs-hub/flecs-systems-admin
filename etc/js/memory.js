@@ -302,8 +302,21 @@ Vue.component('app-mem-data', {
 
 Vue.component('app-memory', {
   props: ['world'],
+  data: function() {
+    return {
+        active: false
+    }
+  },
+  mounted() {
+    setTimeout(function() {
+      this.active = true;
+    }.bind(this), 1);
+  },
+  beforeDestroy() {
+    this.active = false;
+  },
   template: `
-    <div>
+    <div :class="'app app-active-' + active">
       <h1>Memory</h1>
       <hr>
 

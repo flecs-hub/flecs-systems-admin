@@ -1,58 +1,5 @@
 
 var app_performance = {
-  fps_chart: {
-    type: 'line',
-    data: {
-      labels: [],
-      datasets: [
-        {
-          label: 'Systems',
-          data: [],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderColor: [
-            '#46D9E6',
-          ],
-          borderWidth: 2,
-          pointRadius: 0
-        },
-        {
-          label: 'FPS',
-          data: [],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderColor: [
-            '#5BE595',
-          ],
-          borderWidth: 2,
-          pointRadius: 0
-        }
-      ]
-    },
-    options: {
-      title: {
-        text: "Load (1m)",
-        position: "top",
-        display: true
-      },
-      responsive: true,
-      maintainAspectRatio: false,
-      lineTension: 1,
-      scales: {
-        yAxes: [{
-          id: 'y_fps',
-          ticks: {
-            beginAtZero: true,
-            padding: 25,
-          }
-        }],
-        xAxes: [{
-          ticks: {
-            maxTicksLimit: 20
-          }
-        }]
-      }
-    }
-  },
-
   sys_1min_chart: {
     type: 'line',
     data: {
@@ -141,24 +88,15 @@ var app_performance = {
       labels: [],
       datasets: [
         {
-          label: 'Systems (min)',
+          label: 'FPS',
           data: [],
-          borderColor: [
-            '#46D9E6'
-          ],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderWidth: 1,
-          pointRadius: 0
-        },
-        {
-          label: 'Systems (max)',
-          data: [],
           borderColor: [
-            '#296065'
+            '#5BE595',
           ],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderWidth: 1,
-          pointRadius: 0
+          borderWidth: 2,
+          pointRadius: 0,
+          yAxisID: "fps"
         },
         {
           label: 'FPS (min)',
@@ -168,7 +106,8 @@ var app_performance = {
           ],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderWidth: 1,
-          pointRadius: 0
+          pointRadius: 0,
+          yAxisID: "fps"
         },
         {
           label: 'FPS (max)',
@@ -178,8 +117,10 @@ var app_performance = {
           ],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderWidth: 1,
-          pointRadius: 0
+          pointRadius: 0,
+          yAxisID: "fps"
         },
+
         {
           label: 'Systems',
           data: [],
@@ -188,18 +129,99 @@ var app_performance = {
             '#46D9E6',
           ],
           borderWidth: 2,
-          pointRadius: 0
+          pointRadius: 0,
+          yAxisID: "pct"
         },
         {
-          label: 'FPS',
+          label: 'Systems (min)',
+          data: [],
+          borderColor: [
+            '#46D9E6'
+          ],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
+          borderWidth: 1,
+          pointRadius: 0,
+          yAxisID: "pct"
+        },
+        {
+          label: 'Systems (max)',
+          data: [],
+          borderColor: [
+            '#296065'
+          ],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
+          borderWidth: 1,
+          pointRadius: 0,
+          yAxisID: "pct"
+        },
+
+        {
+          label: 'Merging',
           data: [],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderColor: [
-            '#5BE595',
+            '#E550E6',
           ],
           borderWidth: 2,
-          pointRadius: 0
-        }
+          pointRadius: 0,
+          yAxisID: "pct"
+        },
+        {
+          label: 'Merging (min)',
+          data: [],
+          borderColor: [
+            '#E550E6'
+          ],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
+          borderWidth: 1,
+          pointRadius: 0,
+          yAxisID: "pct"
+        },
+        {
+          label: 'Merging (max)',
+          data: [],
+          borderColor: [
+            '#653365'
+          ],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
+          borderWidth: 1,
+          pointRadius: 0,
+          yAxisID: "pct"
+        },
+
+        {
+          label: 'Total',
+          data: [],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
+          borderColor: [
+            '#6146E6',
+          ],
+          borderWidth: 2,
+          pointRadius: 0,
+          yAxisID: "pct"
+        },
+        {
+          label: 'Total (min)',
+          data: [],
+          borderColor: [
+            '#6146E6'
+          ],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
+          borderWidth: 1,
+          pointRadius: 0,
+          yAxisID: "pct"
+        },
+        {
+          label: 'Total (max)',
+          data: [],
+          borderColor: [
+            '#3C3366'
+          ],
+          backgroundColor: [ 'rgba(0,0,0,0)' ],
+          borderWidth: 1,
+          pointRadius: 0,
+          yAxisID: "pct"
+        },
       ]
     },
     options: {
@@ -213,10 +235,24 @@ var app_performance = {
       lineTension: 1,
       scales: {
         yAxes: [{
-          id: 'y_fps',
+          id: 'fps',
           ticks: {
             beginAtZero: true,
             padding: 25,
+            callback: function(value, index, values) {
+                return value + "Hz";
+            }
+          }
+        }, {
+          id: 'pct',
+          position: 'right',
+          ticks: {
+            beginAtZero: true,
+            padding: 10,
+            suggestedMax: 100,
+            callback: function(value, index, values) {
+                return value + "%";
+            }
           }
         }],
         xAxes: [{
@@ -227,8 +263,6 @@ var app_performance = {
       }
     }
   },
-
-
 
   mem_chart: {
     type: 'doughnut',
@@ -274,54 +308,6 @@ var app_performance = {
   }
 }
 
-Vue.component('app-performance-fps-graph', {
-  props: ['world'],
-  mounted() {
-    this.createChart();
-  },
-  updated() {
-    this.updateChart();
-  },
-  data: function() {
-    return {
-      chart: {}
-    }
-  },
-  methods: {
-    setValues() {
-      var labels = [];
-      var frame_pct = [];
-      var length = this.world.fps.length;
-      for (var i = 0; i < length; i ++) {
-          labels.push((length  - i) + "s");
-          var fps = this.world.fps[i];
-          frame_pct.push(this.world.frame[i] * fps * fps);
-      }
-
-      app_performance.fps_chart.data.labels = labels;
-      app_performance.fps_chart.data.datasets[1].data = this.world.fps;
-      app_performance.fps_chart.data.datasets[0].data = frame_pct;
-    },
-    createChart() {
-      const ctx = document.getElementById('fps-graph');
-      this.setValues();
-      this.chart = new Chart(ctx, {
-        type: app_performance.fps_chart.type,
-        data: app_performance.fps_chart.data,
-        options: app_performance.fps_chart.options
-      });
-    },
-    updateChart() {
-      this.setValues();
-      this.chart.update(0);
-    }
-  },
-  template: `
-    <div class="app-graph">
-      <canvas id="fps-graph" :data-fps="world.tick"></canvas>
-    </div>`
-});
-
 Vue.component('app-performance-fps-1hr-graph', {
   props: ['world'],
   mounted() {
@@ -338,35 +324,46 @@ Vue.component('app-performance-fps-1hr-graph', {
   methods: {
     setValues() {
       var labels = [];
-      var frame_pct = [];
-      var frame_pct_min = [];
-      var frame_pct_max = [];
+
+      var merge = [];
+      var merge_min = [];
+      var merge_max = [];
 
       var length = this.world.fps_1hr.length;
+
       for (var i = 0; i < length; i ++) {
           labels.push((length - i) + "m");
-          var fps = this.world.fps_1hr[i];
-          var val = this.world.frame_1hr[i] * fps * fps;
-          if (val > fps) val = 0;
-          frame_pct.push(val);
-          var val = this.world.frame_min_1hr[i] * fps * fps;
-          if (val > fps) val = 0;
-          frame_pct_min.push(val);
-          var val = this.world.frame_max_1hr[i] * fps * fps;
-          if (val > fps) val = 0;
-          frame_pct_max.push(val);
+          var frame = this.world.frame_1hr[i];
+          var system = this.world.system_1hr[i];
+          merge.push(frame - system);
+
+          var frame_min = this.world.frame_min_1hr[i];
+          var system_min = this.world.system_min_1hr[i];
+          merge_min.push(frame_min - system_min);
+
+          var frame_max = this.world.frame_max_1hr[i];
+          var system_max = this.world.system_max_1hr[i];
+          merge_max.push(frame_max - system_max);
       }
 
       app_performance.fps_1hr_chart.data.labels = labels;
-      app_performance.fps_1hr_chart.data.datasets[4].data = frame_pct;
-      app_performance.fps_1hr_chart.data.datasets[5].data = this.world.fps_1hr;
+      app_performance.fps_1hr_chart.data.datasets[0].data = this.world.fps_1hr;
+      app_performance.fps_1hr_chart.data.datasets[1].data = this.world.fps_min_1hr;
+      app_performance.fps_1hr_chart.data.datasets[2].data = this.world.fps_max_1hr;
 
-      app_performance.fps_1hr_chart.data.datasets[0].data = frame_pct_min;
-      app_performance.fps_1hr_chart.data.datasets[1].data = frame_pct_max;
+      app_performance.fps_1hr_chart.data.datasets[3].data = this.world.system_1hr;
+      app_performance.fps_1hr_chart.data.datasets[4].data = this.world.system_min_1hr;
+      app_performance.fps_1hr_chart.data.datasets[5].data = this.world.system_max_1hr;
 
-      app_performance.fps_1hr_chart.data.datasets[2].data = this.world.fps_min_1hr;
-      app_performance.fps_1hr_chart.data.datasets[3].data = this.world.fps_max_1hr;
+      app_performance.fps_1hr_chart.data.datasets[6].data = merge;
+      app_performance.fps_1hr_chart.data.datasets[7].data = merge_min;
+      app_performance.fps_1hr_chart.data.datasets[8].data = merge_max;
+
+      app_performance.fps_1hr_chart.data.datasets[9].data = this.world.frame_1hr;
+      app_performance.fps_1hr_chart.data.datasets[10].data = this.world.frame_min_1hr;
+      app_performance.fps_1hr_chart.data.datasets[11].data = this.world.frame_max_1hr;
     },
+
     createChart() {
       const ctx = document.getElementById('fps-1hr-graph');
       this.setValues();
@@ -569,7 +566,7 @@ Vue.component('app-performance-system-row', {
         </div>
       </td>
       <td>
-        {{(100 * system.time_spent / frame).toFixed(2)}}
+        {{(100 * system.time_spent / frame).toFixed(2)}}%
       </td>
       <td>
         <app-systems-warning :is_hidden="system.is_hidden">
@@ -589,7 +586,7 @@ Vue.component('app-performance-system-table', {
   template: `
     <div class="app-table">
       <div class="app-table-top">
-        <h2>periodic systems</h2>
+        <h2>systems</h2>
       </div>
       <div class="app-noscroll-table-content">
         <table class="last_align_right">
@@ -597,7 +594,7 @@ Vue.component('app-performance-system-table', {
             <tr>
               <th>id</th>
               <th>period</th>
-              <th>% time</th>
+              <th>time</th>
               <th></th>
             </tr>
           </thead>
@@ -622,11 +619,6 @@ Vue.component('app-perf-summary', {
     this.$refs.system_profiling_input.checked = this.world.system_profiling;
   },
   methods: {
-    getLoad() {
-      var fps = this.world.fps[this.world.fps.length - 1];
-      var frame = this.world.frame[this.world.frame.length - 1];
-      return (frame * fps * 100).toFixed(2);
-    },
     set_frame_profiling(el) {
       const Http = new XMLHttpRequest();
       const url = "http://" + host + "/world?frame_profiling=" + el.checked;
@@ -655,16 +647,18 @@ Vue.component('app-perf-summary', {
           <thead>
             <tr>
               <th>FPS</th>
-              <th>Load %</th>
-              <th>Periodic systems</th>
+              <th>Load</th>
+              <th>Systems</th>
+              <th>Entities</th>
               <th>Frame profiling</th>
               <th>System profiling</th>
             </tr>
           </thead>
           <tbody>
-            <td>{{(world.fps[world.fps.length - 1]).toFixed(2)}}</td>
-            <td>{{getLoad()}}</td>
-            <td>{{world.systems.on_frame.length}}</td>
+            <td>{{(world.fps[world.fps.length - 1]).toFixed(2)}}Hz</td>
+            <td>{{(world.frame[world.frame.length - 1]).toFixed(2)}}%</td>
+            <td>{{(world.system[world.system.length - 1]).toFixed(2)}}%</td>
+            <td>{{world.entity_count}}</td>
             <td>
               <label class="switch">
                 <input type="checkbox"
@@ -689,8 +683,21 @@ Vue.component('app-perf-summary', {
 
 Vue.component('app-performance', {
   props: ['world'],
+  data: function() {
+    return {
+        active: false
+    }
+  },
+  mounted() {
+    setTimeout(function() {
+      this.active = true;
+    }.bind(this), 1);
+  },
+  beforeDestroy() {
+    this.active = false;
+  },
   template: `
-    <div>
+    <div :class="'app app-active-' + active">
       <h1>Performance</h1>
       <hr>
 
@@ -701,8 +708,8 @@ Vue.component('app-performance', {
 
       <div class="app-fixed-row">
         <div class="app-left">
-          <app-performance-fps-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
-          </app-performance-fps-graph>
+          <app-overview-fps-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
+          </app-overview-fps-graph>
         </div>
         <div class="app-right">
           <app-performance-fps-1hr-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps_1hr.length">

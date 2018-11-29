@@ -8,8 +8,23 @@ body {
   font-size: 13px;
 }
 
+div.app {
+  position: relative;
+  transition: all 0.4s;
+}
+
+div.app-active-true {
+  opacity: 1.0;
+  top: 0px;
+}
+
+div.app-active-false {
+  opacity: 0.3;
+  top: 10px;
+}
+
 div.app-border-top {
-  background-color: #333335;
+  background-color: #202027;
   position: absolute;
   top: 0px;
   width: 100%;
@@ -17,10 +32,10 @@ div.app-border-top {
 }
 
 div.app-border-left {
-  background-color: #333335;
+  background-color: #202027;
   position: absolute;
   left: 0px;
-  width: 30px;
+  width: 180px;
   height: 100%;
 }
 
@@ -41,11 +56,10 @@ div.app-menu {
   left: 10px;
   width: 170px;
   height: calc(100% - 10px);
-  background-color: #171718;
+  background-color: #101114;
   padding-left: 20px;
   border-top-left-radius: 10px;
   border: 2px solid #000;
-  border-bottom-width: 0px;
 }
 
 div.app-data {
@@ -74,13 +88,14 @@ div.app-data {
 }
 
 div.app-data h1 {
-  font-weight: 500;
+  font-weight: 300;
+  color: #ddd;
   text-transform: uppercase;
 }
 
 /* Thick red border */
 div.app-data hr {
-  border: 0.5px solid #333335;
+  border: 0.5px solid #202027;
 }
 
 div.app-fixed-row {
@@ -166,7 +181,7 @@ div.app-fullscreen {
 
 div.app-graph {
   border-radius: 5px;
-  border: 1px solid #333335;
+  border: 1px solid #202027;
   padding-left: 5px;
   padding-right: 5px;
   height: 100%;
@@ -175,11 +190,11 @@ div.app-graph {
 div.app-table {
   border-radius: 5px;
   padding-bottom: 0px;
-  border: 1px solid #333335;
+  border: 1px solid #202027;
 }
 
 div.app-table-top {
-  background-color: #171718;
+  background-color: #101114;
   padding-left: 40px;
   padding-right: 40px;
   padding-top: 5px;
@@ -258,6 +273,10 @@ div.app-menu-item {
   font-weight: 500;
 }
 
+div.app-menu-data-item {
+  margin-bottom: 10px;
+}
+
 table {
   font-family: Roboto,Noto Sans,Noto,sans-serif;
   border-collapse: collapse;
@@ -299,7 +318,7 @@ table td {
   padding: 8px;
   padding-left: 0px;
   padding-right: 0px;
-  border-top-color: #333335;
+  border-top-color: #202027;
   border-top-style: solid;
   border-top-width: 1px;
   font-size: inherit;
@@ -333,7 +352,7 @@ div.app-toggle {
 }
 
 div.app-toggle-false {
-  border: 1px solid #282828;
+  border: 1px solid #202027;
 }
 
 div.app-toggle:hover {

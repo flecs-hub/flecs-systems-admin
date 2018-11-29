@@ -24,6 +24,7 @@ typedef struct Measurement {
 typedef struct _EcsAdminMeasurement {
     Measurement fps;
     Measurement frame;
+    Measurement system;
     EcsMap *system_measurements;
     uint32_t tick;
     uint32_t interval;
@@ -220,6 +221,11 @@ char* JsonFromStats(
     AddMeasurementsToJson(&body, "frame_max_1hr", measurements->frame.max_1h);
     AddMeasurementsToJson(&body, "frame_min_1hr", measurements->frame.min_1h);
 
+    AddMeasurementsToJson(&body, "system", measurements->system.data);
+    AddMeasurementsToJson(&body, "system_1hr", measurements->system.data_1h);
+    AddMeasurementsToJson(&body, "system_max_1hr", measurements->system.max_1h);
+    AddMeasurementsToJson(&body, "system_min_1hr", measurements->system.min_1h);
+
     ut_strbuf_appendstr(&body, "}");
 
     return ut_strbuf_get(&body);
@@ -411,15 +417,20 @@ void EcsAdminCollectData(EcsRows *rows) {
         }
 
         double *frame_elem = ecs_ringbuf_push(data->frame.data, &double_params);
-        *frame_elem = stats.frame_time;
+        *frame_elem = stats.frame_time * *fps_elem * 100;
+
+        double *system_elem = ecs_ringbuf_push(data->system.data, &double_params);
+        *system_elem = stats.system_time * *fps_elem * 100;
 
         if (!(index % MEASUREMENT_COUNT)) {
             PushMeasurement(&data->fps, *fps_elem);
             PushMeasurement(&data->frame, *frame_elem);
+            PushMeasurement(&data->system, *system_elem);
         }
 
         AddMeasurement(&data->fps, *fps_elem, index);
         AddMeasurement(&data->frame, *frame_elem, index);
+        AddMeasurement(&data->system, *system_elem, index);
 
         AddSystemMeasurement(data, &stats);
 
@@ -434,6 +445,19 @@ void EcsAdminCollectData(EcsRows *rows) {
     }
 
     ecs_free_stats(rows->world, &stats);
+}
+
+static
+Measurement InitMeasurement(void)
+{
+    Measurement result = {
+      .data = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
+      .data_1h = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
+      .min_1h = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
+      .max_1h = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
+    };
+
+    return result;
 }
 
 /* System that starts admin server and inits EcsAdminMeasurement component */
@@ -461,14 +485,9 @@ void EcsAdminStart(EcsRows *rows) {
                 .synchronous = false });
 
             ecs_set(world, e_world, _EcsAdminMeasurement, {
-              .fps.data = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
-              .frame.data = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
-              .fps.data_1h = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
-              .fps.min_1h = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
-              .fps.max_1h = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
-              .frame.data_1h = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
-              .frame.min_1h = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
-              .frame.max_1h = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT),
+              .fps = InitMeasurement(),
+              .frame = InitMeasurement(),
+              .system = InitMeasurement(),
               .interval = 1,
               .lock = stats_lock
             });
@@ -506,6 +525,7 @@ void EcsAdminMeasurementDeinit(EcsRows *rows) {
         _EcsAdminMeasurement *ctx = ecs_column(rows, row, 0);
         FreeMeasurement(&ctx->fps);
         FreeMeasurement(&ctx->frame);
+        FreeMeasurement(&ctx->system);
     }
 }
 

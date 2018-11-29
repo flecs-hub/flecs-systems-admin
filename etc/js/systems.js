@@ -138,7 +138,7 @@ Vue.component('app-systems-system-table', {
             <tr>
               <th>id</th>
               <th>signature</th>
-              <th>entities matched</th>
+              <th>entities</th>
               <th>period</th>
               <th></th>
             </tr>
@@ -335,8 +335,21 @@ Vue.component('app-system-data', {
 
 Vue.component('app-systems', {
   props: ['world'],
+  data: function() {
+    return {
+        active: false
+    }
+  },
+  mounted() {
+    setTimeout(function() {
+      this.active = true;
+    }.bind(this), 1);
+  },
+  beforeDestroy() {
+    this.active = false;
+  },
   template: `
-    <div>
+    <div :class="'app app-active-' + active">
       <h1>Systems</h1>
       <hr>
 
