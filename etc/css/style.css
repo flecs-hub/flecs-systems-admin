@@ -24,18 +24,13 @@ div.app-active-false {
 }
 
 div.app-border-top {
-  background-color: #202027;
-  position: absolute;
-  top: 0px;
-  width: 100%;
-  height: 10px;
 }
 
 div.app-border-left {
   background-color: #202027;
   position: absolute;
   left: 0px;
-  width: 180px;
+  width: 167px;
   height: 100%;
 }
 
@@ -52,22 +47,21 @@ p.app-title {
 div.app-menu {
   position: absolute;
   box-sizing: border-box;
-  top: 10px;
-  left: 10px;
-  width: 170px;
-  height: calc(100% - 10px);
+  top: 0px;
+  left: 2px;
+  width: 168px;
+  height: calc(100%);
   background-color: #101114;
   padding-left: 20px;
-  border-top-left-radius: 10px;
-  border: 2px solid #000;
+  border-left: 2px solid #000;
 }
 
 div.app-data {
   position: absolute;
   box-sizing: border-box;
-  top: 10px;
-  left: 180px;
-  width: calc(100% - 180px);
+  top: 5px;
+  left: 170px;
+  width: calc(100% - 170px);
   height: calc(100% - 10px);
   padding-left: 20px;
   padding-right: 20px;
@@ -89,6 +83,8 @@ div.app-data {
 
 div.app-data h1 {
   font-weight: 300;
+  font-size: 15px;
+  margin-top: 20px;
   color: #ddd;
   text-transform: uppercase;
 }

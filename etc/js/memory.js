@@ -310,16 +310,13 @@ Vue.component('app-memory', {
   mounted() {
     setTimeout(function() {
       this.active = true;
-    }.bind(this), 1);
+    }.bind(this), 10);
   },
   beforeDestroy() {
     this.active = false;
   },
   template: `
     <div :class="'app app-active-' + active">
-      <h1>Memory</h1>
-      <hr>
-
       <div class="app-row">
         <app-mem-data :world="world">
         </app-mem-data>
@@ -327,11 +324,11 @@ Vue.component('app-memory', {
 
       <div class="app-fixed-row">
         <div class="app-left75">
-          <app-mem-categories-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
+          <app-mem-categories-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.data_1m.length">
           </app-mem-categories-graph>
         </div>
         <div class="app-right25">
-          <app-mem-total-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
+          <app-mem-total-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.data_1m.length">
           </app-mem-total-graph>
         </div>
       </div>

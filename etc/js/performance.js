@@ -99,7 +99,7 @@ var app_performance = {
           yAxisID: "fps"
         },
         {
-          label: 'FPS (min)',
+          label: 'min',
           data: [],
           borderColor: [
             '#5BE595', // Green
@@ -110,7 +110,7 @@ var app_performance = {
           yAxisID: "fps"
         },
         {
-          label: 'FPS (max)',
+          label: 'max',
           data: [],
           borderColor: [
             '#40805B', // Green
@@ -133,7 +133,7 @@ var app_performance = {
           yAxisID: "pct"
         },
         {
-          label: 'Systems (min)',
+          label: 'min',
           data: [],
           borderColor: [
             '#46D9E6'
@@ -144,7 +144,7 @@ var app_performance = {
           yAxisID: "pct"
         },
         {
-          label: 'Systems (max)',
+          label: 'max',
           data: [],
           borderColor: [
             '#296065'
@@ -167,7 +167,7 @@ var app_performance = {
           yAxisID: "pct"
         },
         {
-          label: 'Merging (min)',
+          label: 'min',
           data: [],
           borderColor: [
             '#E550E6'
@@ -178,7 +178,7 @@ var app_performance = {
           yAxisID: "pct"
         },
         {
-          label: 'Merging (max)',
+          label: 'max',
           data: [],
           borderColor: [
             '#653365'
@@ -201,7 +201,7 @@ var app_performance = {
           yAxisID: "pct"
         },
         {
-          label: 'Total (min)',
+          label: 'min',
           data: [],
           borderColor: [
             '#6146E6'
@@ -212,7 +212,7 @@ var app_performance = {
           yAxisID: "pct"
         },
         {
-          label: 'Total (max)',
+          label: 'max',
           data: [],
           borderColor: [
             '#3C3366'
@@ -329,39 +329,39 @@ Vue.component('app-performance-fps-1hr-graph', {
       var merge_min = [];
       var merge_max = [];
 
-      var length = this.world.fps_1hr.length;
+      var length = this.world.fps.data_1h.length;
 
       for (var i = 0; i < length; i ++) {
           labels.push((length - i) + "m");
-          var frame = this.world.frame_1hr[i];
-          var system = this.world.system_1hr[i];
+          var frame = this.world.frame.data_1h[i];
+          var system = this.world.system.data_1h[i];
           merge.push(frame - system);
 
-          var frame_min = this.world.frame_min_1hr[i];
-          var system_min = this.world.system_min_1hr[i];
+          var frame_min = this.world.frame.min_1h[i];
+          var system_min = this.world.system.min_1h[i];
           merge_min.push(frame_min - system_min);
 
-          var frame_max = this.world.frame_max_1hr[i];
-          var system_max = this.world.system_max_1hr[i];
+          var frame_max = this.world.frame.max_1h[i];
+          var system_max = this.world.system.max_1h[i];
           merge_max.push(frame_max - system_max);
       }
 
       app_performance.fps_1hr_chart.data.labels = labels;
-      app_performance.fps_1hr_chart.data.datasets[0].data = this.world.fps_1hr;
-      app_performance.fps_1hr_chart.data.datasets[1].data = this.world.fps_min_1hr;
-      app_performance.fps_1hr_chart.data.datasets[2].data = this.world.fps_max_1hr;
+      app_performance.fps_1hr_chart.data.datasets[0].data = this.world.fps.data_1h;
+      app_performance.fps_1hr_chart.data.datasets[1].data = this.world.fps.min_1h;
+      app_performance.fps_1hr_chart.data.datasets[2].data = this.world.fps.max_1h;
 
-      app_performance.fps_1hr_chart.data.datasets[3].data = this.world.system_1hr;
-      app_performance.fps_1hr_chart.data.datasets[4].data = this.world.system_min_1hr;
-      app_performance.fps_1hr_chart.data.datasets[5].data = this.world.system_max_1hr;
+      app_performance.fps_1hr_chart.data.datasets[3].data = this.world.system.data_1h;
+      app_performance.fps_1hr_chart.data.datasets[4].data = this.world.system.min_1h;
+      app_performance.fps_1hr_chart.data.datasets[5].data = this.world.system.max_1h;
 
       app_performance.fps_1hr_chart.data.datasets[6].data = merge;
       app_performance.fps_1hr_chart.data.datasets[7].data = merge_min;
       app_performance.fps_1hr_chart.data.datasets[8].data = merge_max;
 
-      app_performance.fps_1hr_chart.data.datasets[9].data = this.world.frame_1hr;
-      app_performance.fps_1hr_chart.data.datasets[10].data = this.world.frame_min_1hr;
-      app_performance.fps_1hr_chart.data.datasets[11].data = this.world.frame_max_1hr;
+      app_performance.fps_1hr_chart.data.datasets[9].data = this.world.frame.data_1h;
+      app_performance.fps_1hr_chart.data.datasets[10].data = this.world.frame.min_1h;
+      app_performance.fps_1hr_chart.data.datasets[11].data = this.world.frame.max_1h;
     },
 
     createChart() {
@@ -566,7 +566,7 @@ Vue.component('app-performance-system-row', {
         </div>
       </td>
       <td>
-        {{(100 * system.time_spent / frame).toFixed(2)}}%
+        {{system.time_spent.toFixed(2)}}%
       </td>
       <td>
         <app-systems-warning :is_hidden="system.is_hidden">
@@ -601,9 +601,10 @@ Vue.component('app-performance-system-table', {
           <tbody>
             <app-performance-system-row
               v-for="system in systems"
+              :world="world"
               :key="system.id"
               :system="system"
-              :frame="world.frame[world.frame.length - 1] * world.fps[world.fps.length - 1]"
+              :frame="world.frame.current * world.fps.current"
               v-on:refresh="$emit('refresh', $event)">
             </app-performance-system-row>
           </tbody>
@@ -655,9 +656,9 @@ Vue.component('app-perf-summary', {
             </tr>
           </thead>
           <tbody>
-            <td>{{(world.fps[world.fps.length - 1]).toFixed(2)}}Hz</td>
-            <td>{{(world.frame[world.frame.length - 1]).toFixed(2)}}%</td>
-            <td>{{(world.system[world.system.length - 1]).toFixed(2)}}%</td>
+            <td>{{world.fps.current.toFixed(2)}}Hz</td>
+            <td>{{world.frame.current.toFixed(2)}}%</td>
+            <td>{{world.system.current.toFixed(2)}}%</td>
             <td>{{world.entity_count}}</td>
             <td>
               <label class="switch">
@@ -691,16 +692,13 @@ Vue.component('app-performance', {
   mounted() {
     setTimeout(function() {
       this.active = true;
-    }.bind(this), 1);
+    }.bind(this), 10);
   },
   beforeDestroy() {
     this.active = false;
   },
   template: `
     <div :class="'app app-active-' + active">
-      <h1>Performance</h1>
-      <hr>
-
       <div class="app-row">
         <app-perf-summary :world="world">
         </app-perf-summary>
@@ -708,22 +706,22 @@ Vue.component('app-performance', {
 
       <div class="app-fixed-row">
         <div class="app-left">
-          <app-overview-fps-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
+          <app-overview-fps-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.data_1m.length">
           </app-overview-fps-graph>
         </div>
         <div class="app-right">
-          <app-performance-fps-1hr-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps_1hr.length">
+          <app-performance-fps-1hr-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.data_1h.length">
           </app-performance-fps-1hr-graph>
         </div>
       </div>
 
       <div class="app-fixed-row">
         <div class="app-left">
-          <app-performance-sys-1min-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
+          <app-performance-sys-1min-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.system.data_1h.length">
           </app-performance-sys-1min-graph>
         </div>
         <div class="app-right">
-          <app-performance-sys-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
+          <app-performance-sys-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.data_1m.length">
           </app-performance-sys-graph>
         </div>
       </div>

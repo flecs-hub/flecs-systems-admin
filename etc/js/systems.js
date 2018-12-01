@@ -343,16 +343,13 @@ Vue.component('app-systems', {
   mounted() {
     setTimeout(function() {
       this.active = true;
-    }.bind(this), 1);
+    }.bind(this), 10);
   },
   beforeDestroy() {
     this.active = false;
   },
   template: `
     <div :class="'app app-active-' + active">
-      <h1>Systems</h1>
-      <hr>
-
       <div class="app-row">
         <app-system-data :world="world">
         </app-system-data>

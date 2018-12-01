@@ -9,7 +9,12 @@ function shortenText(columns, length) {
 var world_state = {
   systems: {},
   tables: {},
-  fps: [],
+  fps: {
+    data_1m: [],
+    data_1h: [],
+    min_1h:[],
+    max_1h:[]
+  },
   memory: {}
 }
 
@@ -166,19 +171,19 @@ Vue.component('app-overview-fps-graph', {
     setValues() {
       var labels = [];
       var merge = [];
-      var length = this.world.fps.length;
+      var length = this.world.fps.data_1m.length;
       for (var i = 0; i < length; i ++) {
           labels.push((length  - i) + "s");
-          var frame = this.world.frame[i];
-          var system = this.world.system[i];
+          var frame = this.world.frame.data_1m[i];
+          var system = this.world.system.data_1m[i];
           merge.push(frame - system);
       }
 
       app_overview.fps_chart.data.labels = labels;
-      app_overview.fps_chart.data.datasets[0].data = this.world.fps;
-      app_overview.fps_chart.data.datasets[1].data = this.world.system;
+      app_overview.fps_chart.data.datasets[0].data = this.world.fps.data_1m;
+      app_overview.fps_chart.data.datasets[1].data = this.world.system.data_1m;
       app_overview.fps_chart.data.datasets[2].data = merge;
-      app_overview.fps_chart.data.datasets[3].data = this.world.frame;
+      app_overview.fps_chart.data.datasets[3].data = this.world.frame.data_1m;
     },
     createChart() {
       const ctx = document.getElementById('fps-graph');
@@ -497,8 +502,8 @@ Vue.component('app-world-data', {
               </tr>
             </thead>
             <tbody v-if="world && world.memory && world.memory.total">
-              <td>{{(world.fps[world.fps.length - 1]).toFixed(2)}}Hz</td>
-              <td>{{(world.frame[world.frame.length - 1]).toFixed(2)}}%</td>
+              <td>{{world.fps.current.toFixed(2)}}Hz</td>
+              <td>{{world.frame.current.toFixed(2)}}%</td>
               <td>{{(world.memory.total.allocd / 1000).toFixed(2)}}KB</td>
               <td>{{world.entity_count}}</td>
               <td>{{world.thread_count}}</td>
@@ -519,25 +524,23 @@ Vue.component('app-overview', {
   mounted() {
     setTimeout(function() {
       this.active = true;
-    }.bind(this), 1);
+    }.bind(this), 10);
   },
   beforeDestroy() {
     this.active = false;
   },
   template: `
     <div :class="'app app-active-' + active">
-      <h1>Overview</h1>
-      <hr>
       <app-world-data :world="world" v-on:refresh="$emit('refresh', $event)">
       </app-world-data>
 
       <div class="app-fixed-row">
         <div class="app-left">
-          <app-overview-fps-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
+          <app-overview-fps-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.data_1m.length">
           </app-overview-fps-graph>
         </div>
         <div class="app-right">
-          <app-overview-mem-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.length">
+          <app-overview-mem-graph :world="world" v-on:refresh="$emit('refresh', $event)" v-if="world.fps.data_1m.length">
           </app-overview-mem-graph>
         </div>
       </div>
