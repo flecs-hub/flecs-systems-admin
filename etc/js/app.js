@@ -1,5 +1,23 @@
 var host = "";
 
+var colors = [
+    "#5BE595",
+    "#46D9E6",
+    "#4596E5",
+    "#2D5BE6",
+    "#6146E6",
+    "#9546E5",
+    "#E550E6",
+
+    "#40805B",
+    "#296065",
+    "#26537F",
+    "#273C7F",
+    "#3C3366",
+    "#482967",
+    "#653365"
+];
+
 Vue.component('app-menu', {
   props: ['world', 'app'],
   methods: {
@@ -46,10 +64,27 @@ var app = new Vue({
   el: '#app',
 
   methods: {
-    refresh: function() {
+    get_system_color(system) {
+      return this.system_colors[system.id];
+    },
+    set_system_array_colors(systems) {
+      for (var i = 0; i < systems.length; i ++) {
+        var system = systems[i];
+        var color = this.get_system_color(system);
+        if (!color) {
+          this.system_colors[system.id] = colors[this.last_color];
+          this.last_color ++;
+        }
+      }
+    },
+    set_system_colors() {
+      this.set_system_array_colors(this.world.systems.on_frame);
+      this.set_system_array_colors(this.world.systems.on_demand);
+    },
+    refresh() {
       const Http = new XMLHttpRequest();
       host = this.host;
-      const url = "http://" + this.host + "/world"
+      const url = "http://" + this.host + "/world";
       Http.open("GET", url);
       Http.send();
       Http.onreadystatechange = (e)=>{
@@ -59,6 +94,8 @@ var app = new Vue({
             if (!prev) prev = 0;
             this.world = JSON.parse(Http.responseText);
             this.world.tick = prev + 1;
+            this.set_system_colors();
+            this.world.system_colors = this.system_colors;
           }
         }
       }
@@ -71,7 +108,9 @@ var app = new Vue({
   data: {
     host: "localhost:9090",
     world: world_state,
-    app: 'overview'
+    app: 'overview',
+    last_color: 0,
+    system_colors: {Other: "#E550E6"}
   }
 });
 

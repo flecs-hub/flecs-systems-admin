@@ -391,10 +391,13 @@ static
 void AddSystemMeasurement(
     _EcsAdminMeasurement *data,
     EcsWorldStats *stats,
+    EcsArray *systems,
     double fps)
 {
-    uint32_t i, count = ecs_array_count(stats->frame_systems);
-    EcsSystemStats *buffer = ecs_array_buffer(stats->frame_systems);
+    uint32_t i, count = ecs_array_count(systems);
+    EcsSystemStats *buffer = ecs_array_buffer(systems);
+
+    float total = 0;
 
     if (!data->system_measurements) {
         data->system_measurements = ecs_map_new(count);
@@ -412,7 +415,9 @@ void AddSystemMeasurement(
         }
 
         double *value = ecs_ringbuf_push(buf, &double_params);
-        *value = (system->time_spent / (stats->frame_time * fps)) * 100;
+        *value = (system->time_spent / stats->system_time) * 100;
+
+        total += *value;
     }
 }
 
@@ -431,14 +436,16 @@ void EcsAdminCollectData(EcsRows *rows) {
           ? (double)stats.tick_count / rows->delta_time
           : 0
           ;
-        double frame = stats.frame_time * fps * 100;
-        double system = stats.system_time * fps * 100;
+
+        double frame = (stats.frame_time / stats.tick_count) * fps * 100;
+        double system = (stats.system_time / stats.tick_count) * fps * 100;
 
         AddMeasurement(&data->fps, fps);
         AddMeasurement(&data->frame, frame);
         AddMeasurement(&data->system, system);
 
-        AddSystemMeasurement(data, &stats, fps);
+        AddSystemMeasurement(data, &stats, stats.frame_systems, fps);
+        AddSystemMeasurement(data, &stats, stats.on_demand_systems, fps);
 
         char *json = JsonFromStats(rows->world, &stats, data);
 

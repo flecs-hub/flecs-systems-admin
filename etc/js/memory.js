@@ -272,7 +272,7 @@ Vue.component('app-mem-data', {
       return overhead.toFixed(2) + "%";
     },
     toKB(num) {
-      return (num / 1000).toFixed(2) + "KB";
+      return (num / 1000).toFixed(2) + " KB";
     }
   },
   template: `

@@ -127,7 +127,7 @@ var app_overview = {
         ],
         borderColor: "black",
         label: 'Dataset 1',
-        borderWidth: 1
+        borderWidth: 0.5
       }],
       labels: [
         'Components',
@@ -502,9 +502,9 @@ Vue.component('app-world-data', {
               </tr>
             </thead>
             <tbody v-if="world && world.memory && world.memory.total">
-              <td>{{world.fps.current.toFixed(2)}}Hz</td>
+              <td>{{world.fps.current.toFixed(2)}} Hz</td>
               <td>{{world.frame.current.toFixed(2)}}%</td>
-              <td>{{(world.memory.total.allocd / 1000).toFixed(2)}}KB</td>
+              <td>{{(world.memory.total.allocd / 1000).toFixed(2)}} KB</td>
               <td>{{world.entity_count}}</td>
               <td>{{world.thread_count}}</td>
             </tbody>

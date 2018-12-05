@@ -7,50 +7,7 @@ var app_performance = {
       datasets: [
         {
           data: [],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderColor: [ '#5BE595' ],
-          borderWidth: 2,
-          pointRadius: 0
-        },
-        {
-          data: [],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderColor: [ '#46D9E6' ],
-          borderWidth: 2,
-          pointRadius: 0
-        },
-        {
-          data: [],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderColor: [ '#4596E5' ],
-          borderWidth: 2,
-          pointRadius: 0
-        },
-        {
-          data: [],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderColor: [ '#2D5BE6' ],
-          borderWidth: 2,
-          pointRadius: 0
-        },
-        {
-          data: [],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderColor: [ '#6146E6' ],
-          borderWidth: 2,
-          pointRadius: 0
-        },
-        {
-          data: [],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderColor: [ '#9546E5' ],
-          borderWidth: 2,
-          pointRadius: 0
-        },
-        {
-          data: [],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
-          borderColor: [ '#E550E6' ],
           borderWidth: 2,
           pointRadius: 0
         }
@@ -68,9 +25,13 @@ var app_performance = {
       scales: {
         yAxes: [{
           id: 'y_fps',
+          stacked: true,
           ticks: {
             beginAtZero: true,
             padding: 25,
+            callback: function(value, index, values) {
+                return value + "%";
+            }
           }
         }],
         xAxes: [{
@@ -90,7 +51,6 @@ var app_performance = {
         {
           label: 'FPS',
           data: [],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderColor: [
             '#5BE595',
           ],
@@ -104,7 +64,6 @@ var app_performance = {
           borderColor: [
             '#5BE595', // Green
           ],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderWidth: 1,
           pointRadius: 0,
           yAxisID: "fps"
@@ -115,7 +74,6 @@ var app_performance = {
           borderColor: [
             '#40805B', // Green
           ],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderWidth: 1,
           pointRadius: 0,
           yAxisID: "fps"
@@ -124,7 +82,6 @@ var app_performance = {
         {
           label: 'Systems',
           data: [],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderColor: [
             '#46D9E6',
           ],
@@ -138,7 +95,6 @@ var app_performance = {
           borderColor: [
             '#46D9E6'
           ],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderWidth: 1,
           pointRadius: 0,
           yAxisID: "pct"
@@ -149,7 +105,6 @@ var app_performance = {
           borderColor: [
             '#296065'
           ],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderWidth: 1,
           pointRadius: 0,
           yAxisID: "pct"
@@ -158,7 +113,6 @@ var app_performance = {
         {
           label: 'Merging',
           data: [],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderColor: [
             '#E550E6',
           ],
@@ -172,7 +126,6 @@ var app_performance = {
           borderColor: [
             '#E550E6'
           ],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderWidth: 1,
           pointRadius: 0,
           yAxisID: "pct"
@@ -183,7 +136,6 @@ var app_performance = {
           borderColor: [
             '#653365'
           ],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderWidth: 1,
           pointRadius: 0,
           yAxisID: "pct"
@@ -192,7 +144,6 @@ var app_performance = {
         {
           label: 'Total',
           data: [],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderColor: [
             '#6146E6',
           ],
@@ -206,7 +157,6 @@ var app_performance = {
           borderColor: [
             '#6146E6'
           ],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderWidth: 1,
           pointRadius: 0,
           yAxisID: "pct"
@@ -217,7 +167,6 @@ var app_performance = {
           borderColor: [
             '#3C3366'
           ],
-          backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderWidth: 1,
           pointRadius: 0,
           yAxisID: "pct"
@@ -268,34 +217,17 @@ var app_performance = {
     type: 'doughnut',
     data: {
       datasets: [{
-        data: [1, 1, 1, 1, 1, 1, 1],
-        backgroundColor: [
-          "#5BE595",
-          "#46D9E6",
-          "#4596E5",
-          "#2D5BE6",
-          "#6146E6",
-          "#9546E5",
-          "#E550E6",
-          "#AA4462"
-        ],
+        data: [ ],
+        backgroundColor: [ ],
         borderColor: "black",
         label: 'Dataset 1',
-        borderWidth: 1
+        borderWidth: 0.5
       }],
-      labels: [
-        'System 1',
-        'System 2',
-        'System 3',
-        'System 4',
-        'System 5',
-        'System 6',
-        'Other'
-      ]
+      labels: [ ]
     },
     options: {
       title: {
-        text: "Systems",
+        text: "Systems (current)",
         position: "top",
         display: true
       },
@@ -306,6 +238,57 @@ var app_performance = {
       maintainAspectRatio: false
     }
   }
+}
+
+function systemActivity1m(system) {
+  var result = 0;
+  var max = 0;
+  for (var i = 0; i < system.time_spent_1m.length; i ++) {
+    var time_spent = system.time_spent_1m[i];
+    result += time_spent;
+    if (time_spent > max) {
+      max = time_spent;
+    }
+  }
+  return {total: result, max: max};
+}
+
+function getActiveSystems1m(world, include_other = true) {
+  var result = [];
+  var threshold = 1.0 * world.systems.on_frame[0].time_spent_1m.length;
+  var other = 0;
+
+  for (var i = 0; i < world.systems.on_frame.length; i ++) {
+    var system = world.systems.on_frame[i];
+    var time_spent = systemActivity1m(system);
+
+    if (time_spent.max > 1.0) {
+      result.push(system);
+    } else {
+      other += time_spent.total;
+    }
+  }
+
+  if (include_other && other) {
+    result.push({
+      id: "Other",
+      time_spent: other
+    });
+  }
+
+  return result;
+}
+
+function getActiveSystemsCurrent(world) {
+  var result = [];
+  var systems = getActiveSystems1m(world, false);
+  var other = 0;
+
+  for (var i = 0; i < systems.length; i ++) {
+    result.push(systems[i]);
+  }
+
+  return result;
 }
 
 Vue.component('app-performance-fps-1hr-graph', {
@@ -408,13 +391,27 @@ Vue.component('app-performance-sys-1min-graph', {
 
       app_performance.sys_1min_chart.data.labels = labels;
 
-      for (var i = 0; i < this.world.systems.on_frame.length; i ++) {
-          app_performance.sys_1min_chart.data.datasets[i].label = this.world.systems.on_frame[i].id;
-          app_performance.sys_1min_chart.data.datasets[i].data = this.world.systems.on_frame[i].time_spent_1m;
-          if (i == 6) {
-              break;
+      var systems = getActiveSystems1m(this.world);
+
+      var dataset = 0;
+      for (var i = 0; i < systems.length; i ++) {
+          var system = systems[i];
+
+          if (!app_performance.sys_1min_chart.data.datasets[dataset]) {
+            app_performance.sys_1min_chart.data.datasets[dataset] = {
+              borderWidth: 0.5,
+              pointRadius: 0
+            }
           }
+          app_performance.sys_1min_chart.data.datasets[dataset].label = system.id;
+          app_performance.sys_1min_chart.data.datasets[dataset].data = system.time_spent_1m;
+          app_performance.sys_1min_chart.data.datasets[dataset].borderColor = "#000";
+          app_performance.sys_1min_chart.data.datasets[dataset].backgroundColor = this.world.system_colors[system.id];
+
+          dataset ++;
       }
+
+      app_performance.sys_1min_chart.data.datasets.length = dataset;
     },
     createChart() {
       const ctx = document.getElementById('sys-1min-graph');
@@ -450,45 +447,27 @@ Vue.component('app-performance-sys-graph', {
     }
   },
   methods: {
-    sortSystems() {
-      var values = [];
-      var systems = this.world.systems.on_frame;
-      for (var i = 0; i < systems.length; i ++) {
-        values.push(systems[i]);
-      }
-
-      values.sort(function(a, b) {
-        return b.time_spent - a.time_spent;
-      });
-
-      return values;
-    },
     setLabels(systems) {
+      var labels = []
       for (var i = 0; i < systems.length; i ++) {
-        app_performance.mem_chart.data.labels[i] = systems[i].id;
-        if (i == 5) {
-          break;
-        }
+         labels.push(systems[i].id);
       }
+      app_performance.mem_chart.data.labels = labels;
     },
     updateValues(systems) {
       var data = [];
+      var bgColor = [];
       for (var i = 0; i < systems.length; i ++) {
-        data.push(systems[i].time_spent);
-        if (i == 5) {
-          break;
-        }
-      }
-
-      data[6] = 0;
-      for (var i = 6; i < systems.length; i ++) {
-        data[6] += systems[i].time_spent;
+        var system = systems[i];
+        data.push(system.time_spent);
+        bgColor.push(this.world.system_colors[system.id]);
       }
 
       app_performance.mem_chart.data.datasets[0].data = data;
+      app_performance.mem_chart.data.datasets[0].backgroundColor = bgColor;
     },
     updateChart() {
-      var systems = this.sortSystems();
+      var systems = getActiveSystemsCurrent(this.world);
       this.setLabels(systems);
       this.updateValues(systems);
       this.chart.update();
@@ -496,7 +475,7 @@ Vue.component('app-performance-sys-graph', {
     createChart() {
       const ctx = document.getElementById('mem-graph');
 
-      var systems = this.sortSystems();
+      var systems = getActiveSystemsCurrent(this.world);
       this.setLabels(systems);
       this.updateValues(systems);
 
@@ -582,7 +561,7 @@ Vue.component('app-performance-system-row', {
 });
 
 Vue.component('app-performance-system-table', {
-  props: ['world', 'systems'],
+  props: ['world'],
   template: `
     <div class="app-table">
       <div class="app-table-top">
@@ -600,7 +579,15 @@ Vue.component('app-performance-system-table', {
           </thead>
           <tbody>
             <app-performance-system-row
-              v-for="system in systems"
+              v-for="system in world.systems.on_frame"
+              :world="world"
+              :key="system.id"
+              :system="system"
+              :frame="world.frame.current * world.fps.current"
+              v-on:refresh="$emit('refresh', $event)">
+            </app-performance-system-row>
+            <app-performance-system-row
+              v-for="system in world.systems.on_demand"
               :world="world"
               :key="system.id"
               :system="system"
@@ -656,7 +643,7 @@ Vue.component('app-perf-summary', {
             </tr>
           </thead>
           <tbody>
-            <td>{{world.fps.current.toFixed(2)}}Hz</td>
+            <td>{{world.fps.current.toFixed(2)}} Hz</td>
             <td>{{world.frame.current.toFixed(2)}}%</td>
             <td>{{world.system.current.toFixed(2)}}%</td>
             <td>{{world.entity_count}}</td>
@@ -686,7 +673,7 @@ Vue.component('app-performance', {
   props: ['world'],
   data: function() {
     return {
-        active: false
+        active: false,
     }
   },
   mounted() {
@@ -697,6 +684,7 @@ Vue.component('app-performance', {
   beforeDestroy() {
     this.active = false;
   },
+
   template: `
     <div :class="'app app-active-' + active">
       <div class="app-row">
