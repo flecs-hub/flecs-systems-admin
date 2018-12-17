@@ -1,8 +1,7 @@
 #ifndef REFLECS_SYSTEMS_ADMIN_H
 #define REFLECS_SYSTEMS_ADMIN_H
 
-#include <reflecs/reflecs.h>
-#include <reflecs/components/http/http.h>
+#include "prebaked.h"
 
 #ifdef __cplusplus
 extern "C" {
