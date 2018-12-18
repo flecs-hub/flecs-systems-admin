@@ -1,11 +1,6 @@
 #include <include/admin.h>
 #include <string.h>
 #include <pthread.h>
-#include <reflecs/util/map.h>
-#include <reflecs/util/ringbuf.h>
-#include <reflecs/util/stats.h>
-#include <reflecs/util/strbuf.h>
-#include <reflecs/util/time.h>
 
 #define MEASUREMENT_COUNT (60)
 
@@ -323,23 +318,18 @@ bool RequestFiles(
 {
     const char *file = request->relative_url;
     char bake_file[1024];
-    char *bake_home = getenv("BAKE_HOME");
-    char *bake_version = getenv("BAKE_VERSION");
-    char *bake_platform = getenv("BAKE_PLATFORM");
-    char *bake_config = getenv("BAKE_CONFIG");
 
     if (!strlen(file)) {
         file = "index.html";
     }
 
-    sprintf(bake_file, "%s/%s/%s-%s/etc/reflecs/systems/admin/%s",
-        bake_home, bake_version, bake_platform, bake_config, file);
+    const char *etc_path = ut_locate(BAKE_PROJECT_ID, NULL, UT_LOCATE_ETC);
 
-    FILE *f = fopen(bake_file, "r");
-    if (!f) {
+    sprintf(bake_file, "%s/%s", etc_path, file);
+
+    if (ut_file_test(bake_file) != 1) {
         return false;
     }
-    fclose(f);
 
     reply->body = strdup(bake_file);
     reply->is_file = true;
@@ -576,6 +566,9 @@ void EcsSystemsAdmin(
 
     /* Only execute data collection system once per second */
     ecs_set_period(world, EcsAdminCollectData_h, 1.0);
+
+    ut_init("admin");
+    ut_load_init(NULL, NULL, NULL);
 
     handles->Admin = EcsAdmin_h;
 }
