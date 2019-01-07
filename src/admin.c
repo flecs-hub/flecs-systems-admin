@@ -419,6 +419,10 @@ void EcsAdminCollectData(EcsRows *rows) {
     EcsWorldStats stats = {0};
     ecs_get_stats(rows->world, &stats);
 
+    if (!stats.tick_count || !rows->delta_time) {
+        return;
+    }
+
     for (row = rows->first; row < rows->last; row = ecs_next(rows, row)) {
         _EcsAdminMeasurement *data = ecs_column(rows, row, 0);
 
