@@ -1,7 +1,7 @@
 #ifndef REFLECS_SYSTEMS_ADMIN_H
 #define REFLECS_SYSTEMS_ADMIN_H
 
-#include "prebaked.h"
+#include "bake_config.h"
 
 #ifdef __cplusplus
 extern "C" {

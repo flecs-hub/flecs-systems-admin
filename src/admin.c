@@ -481,6 +481,7 @@ void EcsAdminStart(EcsRows *rows) {
 
         ecs_set(world, server, EcsHttpServer, {.port = data->port});
           EcsHandle e_world = ecs_new(world, server);
+
             ecs_set(world, e_world, EcsHttpEndpoint, {
                 .url = "world",
                 .action = RequestWorld,
