@@ -553,7 +553,7 @@ void EcsSystemsAdmin(
 
     /* Start admin server when an EcsAdmin component has been initialized */
     ECS_SYSTEM(world, EcsAdminStart, EcsOnSet, EcsAdmin);
-    ECS_SYSTEM(world, EcsAdminCollectData, EcsOnFrame, _EcsAdminMeasurement);
+    ECS_SYSTEM(world, EcsAdminCollectData, EcsPostFrame, _EcsAdminMeasurement);
     ECS_SYSTEM(world, EcsAdminMeasurementDeinit, EcsOnRemove, _EcsAdminMeasurement);
 
     /* Make EcsComponentsHttp handles available to EcsAdminStart stystem */
