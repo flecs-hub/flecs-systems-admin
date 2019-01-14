@@ -565,9 +565,6 @@ void EcsSystemsAdmin(
     ecs_add(world, EcsAdminStart_h, EcsHidden_h);
     ecs_add(world, EcsAdminCollectData_h, EcsHidden_h);
     ecs_add(world, EcsAdminMeasurementDeinit_h, EcsHidden_h);
-    ecs_commit(world, EcsAdminStart_h);
-    ecs_commit(world, EcsAdminCollectData_h);
-    ecs_commit(world, EcsAdminMeasurementDeinit_h);
 
     /* Only execute data collection system once per second */
     ecs_set_period(world, EcsAdminCollectData_h, 1.0);

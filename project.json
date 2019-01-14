@@ -2,6 +2,8 @@
     "id":"reflecs.systems.admin",
     "type":"package",
     "value": {
+        "author": "Sander Mertens",
+        "description": "Web based dashboard for reflecs",
         "use": [
             "reflecs",
             "reflecs.util",

@@ -88,6 +88,9 @@ Vue.component('app-systems-system-row', {
       } else {
         return "disabled";
       }
+    },
+    signatureText(sig) {
+      return shortenText(sig);
     }
   },
   template: `
@@ -99,7 +102,7 @@ Vue.component('app-systems-system-row', {
         &nbsp;{{system.id}}
       </td>
       <td>
-        {{system.signature}}
+        {{signatureText(system.signature)}}
       </td>
       <td>
         {{system.entities_matched}}

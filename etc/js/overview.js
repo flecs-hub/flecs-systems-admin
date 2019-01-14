@@ -1,7 +1,7 @@
 
 function shortenText(columns, length) {
-  if (columns.length > 30) {
-      columns = columns.slice(0, 30) + "...";
+  if (columns.length > 80) {
+      columns = columns.slice(0, 80) + "...";
   }
   return columns;
 }
