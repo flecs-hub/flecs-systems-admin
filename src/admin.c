@@ -6,7 +6,7 @@
 
 typedef struct _EcsAdminCtx {
     EcsComponentsHttpHandles http;
-    EcsHandle admin_measurement_handle;
+    EcsEntity admin_measurement_handle;
 } _EcsAdminCtx;
 
 typedef struct Measurement {
@@ -238,13 +238,13 @@ char* JsonFromStats(
 static
 bool RequestWorld(
     EcsWorld *world,
-    EcsHandle entity,
+    EcsEntity entity,
     EcsHttpEndpoint *endpoint,
     EcsHttpRequest *request,
     EcsHttpReply *reply)
 {
     if (request->method == EcsHttpGet) {
-        EcsHandle stats_handle = *(EcsHandle*)endpoint->ctx;
+        EcsEntity stats_handle = *(EcsEntity*)endpoint->ctx;
         _EcsAdminMeasurement *stats = ecs_get_ptr(world, entity, stats_handle);
 
         char *stats_json = NULL;
@@ -282,14 +282,14 @@ bool RequestWorld(
 static
 bool RequestSystems(
     EcsWorld *world,
-    EcsHandle entity,
+    EcsEntity entity,
     EcsHttpEndpoint *endpoint,
     EcsHttpRequest *request,
     EcsHttpReply *reply)
 {
     ut_strbuf body = UT_STRBUF_INIT;
 
-    EcsHandle system = ecs_lookup(world, request->relative_url);
+    EcsEntity system = ecs_lookup(world, request->relative_url);
     if (!system) {
         return false;
     }
@@ -311,7 +311,7 @@ bool RequestSystems(
 static
 bool RequestFiles(
     EcsWorld *world,
-    EcsHandle entity,
+    EcsEntity entity,
     EcsHttpEndpoint *endpoint,
     EcsHttpRequest *request,
     EcsHttpReply *reply)
@@ -424,7 +424,7 @@ void EcsAdminCollectData(EcsRows *rows) {
     }
 
     for (row = rows->first; row < rows->last; row = ecs_next(rows, row)) {
-        _EcsAdminMeasurement *data = ecs_column(rows, row, 0);
+        _EcsAdminMeasurement *data = ecs_data(rows, row, 0);
 
         double fps = rows->delta_time
           ? (double)stats.tick_count / rows->delta_time
@@ -472,19 +472,19 @@ static
 void EcsAdminStart(EcsRows *rows) {
     EcsWorld *world = rows->world;
     _EcsAdminCtx *ctx = ecs_get_system_context(world, rows->system);
-    EcsHandle _EcsAdminMeasurement_h = ctx->admin_measurement_handle;
+    EcsEntity _EcsAdminMeasurement_h = ctx->admin_measurement_handle;
     EcsComponentsHttp_DeclareHandles(ctx->http);
 
     void *row;
     for (row = rows->first; row < rows->last; row = ecs_next(rows, row)) {
-        EcsHandle server = ecs_entity(row);
-        EcsAdmin *data = ecs_column(rows, row, 0);
+        EcsEntity server = ecs_entity(rows, row, 0);
+        EcsAdmin *data = ecs_data(rows, row, 0);
 
         pthread_mutex_t stats_lock;
         pthread_mutex_init(&stats_lock, NULL);
 
         ecs_set(world, server, EcsHttpServer, {.port = data->port});
-          EcsHandle e_world = ecs_new(world, server);
+          EcsEntity e_world = ecs_new(world, server);
 
             ecs_set(world, e_world, EcsHttpEndpoint, {
                 .url = "world",
@@ -499,13 +499,13 @@ void EcsAdminStart(EcsRows *rows) {
               .lock = stats_lock
             });
 
-          EcsHandle e_systems = ecs_new(world, server);
+          EcsEntity e_systems = ecs_new(world, server);
             ecs_set(world, e_systems, EcsHttpEndpoint, {
                 .url = "systems",
                 .action = RequestSystems,
                 .synchronous = true });
 
-          EcsHandle e_files = ecs_new(world, server);
+          EcsEntity e_files = ecs_new(world, server);
             ecs_set(world, e_files, EcsHttpEndpoint, {
                 .url = "",
                 .action = RequestFiles,
@@ -529,7 +529,7 @@ static
 void EcsAdminMeasurementDeinit(EcsRows *rows) {
     void *row;
     for (row = rows->first; row < rows->last; row = ecs_next(rows, row)) {
-        _EcsAdminMeasurement *ctx = ecs_column(rows, row, 0);
+        _EcsAdminMeasurement *ctx = ecs_data(rows, row, 0);
         FreeMeasurement(&ctx->fps);
         FreeMeasurement(&ctx->frame);
         FreeMeasurement(&ctx->system);

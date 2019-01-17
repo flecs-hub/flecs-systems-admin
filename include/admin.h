@@ -12,7 +12,7 @@ typedef struct EcsAdmin {
 } EcsAdmin;
 
 typedef struct EcsSystemsAdminHandles {
-   EcsHandle Admin;
+   EcsEntity Admin;
 } EcsSystemsAdminHandles;
 
 void EcsSystemsAdmin(
