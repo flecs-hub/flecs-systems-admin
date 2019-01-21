@@ -73,7 +73,7 @@ var app = new Vue({
         var color = this.get_system_color(system);
         if (!color) {
           this.system_colors[system.id] = colors[this.last_color];
-          this.last_color ++;
+          this.last_color = (this.last_color + 1) % colors.length;
         }
       }
     },
@@ -106,7 +106,7 @@ var app = new Vue({
   },
 
   data: {
-    host: "localhost:9090",
+    host: window.location.host,
     world: world_state,
     app: 'overview',
     last_color: 0,

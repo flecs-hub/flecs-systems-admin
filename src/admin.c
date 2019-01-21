@@ -258,7 +258,7 @@ bool RequestWorld(
 
         if (!stats_json) {
             reply->status = 204;
-            return false;
+            return true;
         }
 
         reply->body = stats_json;
@@ -485,7 +485,6 @@ void EcsAdminStart(EcsRows *rows) {
 
         ecs_set(world, server, EcsHttpServer, {.port = data->port});
           EcsEntity e_world = ecs_new(world, server);
-
             ecs_set(world, e_world, EcsHttpEndpoint, {
                 .url = "world",
                 .action = RequestWorld,
@@ -568,6 +567,9 @@ void EcsSystemsAdmin(
 
     /* Only execute data collection system once per second */
     ecs_set_period(world, EcsAdminCollectData_h, 1.0);
+
+    /* Enable frame profiling */
+    ecs_measure_frame_time(world, true);
 
     ut_init("admin");
     ut_load_init(NULL, NULL, NULL);
