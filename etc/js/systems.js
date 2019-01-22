@@ -102,9 +102,6 @@ Vue.component('app-systems-system-row', {
         &nbsp;{{system.id}}
       </td>
       <td>
-        {{signatureText(system.signature)}}
-      </td>
-      <td>
         {{system.entities_matched}}
       </td>
       <td>
@@ -112,7 +109,7 @@ Vue.component('app-systems-system-row', {
           {{system.period.toFixed(2)}}s
         </div>
         <div v-else>
-          each frame
+          *
         </div>
       </td>
       <td>
@@ -140,7 +137,6 @@ Vue.component('app-systems-system-table', {
           <thead>
             <tr>
               <th>id</th>
-              <th>signature</th>
               <th>entities</th>
               <th>period</th>
               <th></th>
@@ -298,7 +294,11 @@ Vue.component('app-system-data', {
       return result;
     },
     getFrameworkSystems() {
-      var framework_systems = this.countFwSystems(this.world.systems.on_frame);
+      var framework_systems = this.countFwSystems(this.world.systems.on_load);
+      framework_systems += this.countFwSystems(this.world.systems.pre_frame);
+      framework_systems += this.countFwSystems(this.world.systems.on_frame);
+      framework_systems += this.countFwSystems(this.world.systems.post_frame);
+      framework_systems += this.countFwSystems(this.world.systems.on_store);
       framework_systems += this.countFwSystems(this.world.systems.on_demand);
       framework_systems += this.countFwSystems(this.world.systems.on_add);
       framework_systems += this.countFwSystems(this.world.systems.on_set);
@@ -365,8 +365,40 @@ Vue.component('app-systems', {
 
       <div class="app-row">
         <app-systems-system-table :world="world"
+          :systems="world.systems.on_load"
+          :kind="'on load'"
+          v-on:refresh="$emit('refresh', $event)">
+        </app-systems-system-table>
+      </div>
+
+      <div class="app-row">
+        <app-systems-system-table :world="world"
+          :systems="world.systems.pre_frame"
+          :kind="'pre frame'"
+          v-on:refresh="$emit('refresh', $event)">
+        </app-systems-system-table>
+      </div>
+
+      <div class="app-row">
+        <app-systems-system-table :world="world"
           :systems="world.systems.on_frame"
           :kind="'on frame'"
+          v-on:refresh="$emit('refresh', $event)">
+        </app-systems-system-table>
+      </div>
+
+      <div class="app-row">
+        <app-systems-system-table :world="world"
+          :systems="world.systems.post_frame"
+          :kind="'post frame'"
+          v-on:refresh="$emit('refresh', $event)">
+        </app-systems-system-table>
+      </div>
+
+      <div class="app-row">
+        <app-systems-system-table :world="world"
+          :systems="world.systems.on_store"
+          :kind="'on store'"
           v-on:refresh="$emit('refresh', $event)">
         </app-systems-system-table>
       </div>

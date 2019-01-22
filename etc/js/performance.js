@@ -255,11 +255,17 @@ function systemActivity1m(system) {
 
 function getActiveSystems1m(world, include_other = true) {
   var result = [];
-  var threshold = 1.0 * world.systems.on_frame[0].time_spent_1m.length;
+  var systems = [];
+  systems = systems.concat(world.systems.on_load);
+  systems = systems.concat(world.systems.pre_frame);
+  systems = systems.concat(world.systems.on_frame);
+  systems = systems.concat(world.systems.post_frame);
+  systems = systems.concat(world.systems.on_store);
+  var threshold = 1.0 * systems[0].time_spent_1m.length;
   var other = 0;
 
-  for (var i = 0; i < world.systems.on_frame.length; i ++) {
-    var system = world.systems.on_frame[i];
+  for (var i = 0; i < systems.length; i ++) {
+    var system = systems[i];
     var time_spent = systemActivity1m(system);
 
     if (time_spent.max > 1.0) {
@@ -541,7 +547,7 @@ Vue.component('app-performance-system-row', {
           {{system.period.toFixed(2)}}s
         </div>
         <div v-else>
-          each frame
+          *
         </div>
       </td>
       <td>
@@ -579,7 +585,39 @@ Vue.component('app-performance-system-table', {
           </thead>
           <tbody>
             <app-performance-system-row
+              v-for="system in world.systems.on_load"
+              :world="world"
+              :key="system.id"
+              :system="system"
+              :frame="world.frame.current * world.fps.current"
+              v-on:refresh="$emit('refresh', $event)">
+            </app-performance-system-row>
+            <app-performance-system-row
+              v-for="system in world.systems.pre_frame"
+              :world="world"
+              :key="system.id"
+              :system="system"
+              :frame="world.frame.current * world.fps.current"
+              v-on:refresh="$emit('refresh', $event)">
+            </app-performance-system-row>
+            <app-performance-system-row
               v-for="system in world.systems.on_frame"
+              :world="world"
+              :key="system.id"
+              :system="system"
+              :frame="world.frame.current * world.fps.current"
+              v-on:refresh="$emit('refresh', $event)">
+            </app-performance-system-row>
+            <app-performance-system-row
+              v-for="system in world.systems.post_frame"
+              :world="world"
+              :key="system.id"
+              :system="system"
+              :frame="world.frame.current * world.fps.current"
+              v-on:refresh="$emit('refresh', $event)">
+            </app-performance-system-row>
+            <app-performance-system-row
+              v-for="system in world.systems.on_store"
               :world="world"
               :key="system.id"
               :system="system"

@@ -382,7 +382,35 @@ Vue.component('app-systems-table', {
           </thead>
           <tbody>
             <app-system-row
+              v-for="system in world.systems.on_load"
+              v-if="!system.is_hidden"
+              :key="system.id"
+              :system="system"
+              v-on:refresh="$emit('refresh', $event)">
+            </app-system-row>
+            <app-system-row
+              v-for="system in world.systems.pre_frame"
+              v-if="!system.is_hidden"
+              :key="system.id"
+              :system="system"
+              v-on:refresh="$emit('refresh', $event)">
+            </app-system-row>
+            <app-system-row
               v-for="system in world.systems.on_frame"
+              v-if="!system.is_hidden"
+              :key="system.id"
+              :system="system"
+              v-on:refresh="$emit('refresh', $event)">
+            </app-system-row>
+            <app-system-row
+              v-for="system in world.systems.post_frame"
+              v-if="!system.is_hidden"
+              :key="system.id"
+              :system="system"
+              v-on:refresh="$emit('refresh', $event)">
+            </app-system-row>
+            <app-system-row
+              v-for="system in world.systems.on_store"
               v-if="!system.is_hidden"
               :key="system.id"
               :system="system"

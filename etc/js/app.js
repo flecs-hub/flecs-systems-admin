@@ -1,6 +1,12 @@
 var host = "";
 
 var colors = [
+    "#B7CB2A",
+    "#8DB3CC",
+    "#8B2DCA",
+    "#5AB7CC",
+    "#C28DCC",
+    
     "#5BE595",
     "#46D9E6",
     "#4596E5",
@@ -78,7 +84,11 @@ var app = new Vue({
       }
     },
     set_system_colors() {
+      this.set_system_array_colors(this.world.systems.on_load);
+      this.set_system_array_colors(this.world.systems.pre_frame);
       this.set_system_array_colors(this.world.systems.on_frame);
+      this.set_system_array_colors(this.world.systems.post_frame);
+      this.set_system_array_colors(this.world.systems.on_store);
       this.set_system_array_colors(this.world.systems.on_demand);
     },
     refresh() {

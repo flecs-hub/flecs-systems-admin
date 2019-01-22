@@ -216,7 +216,11 @@ char* JsonFromStats(
 
     bool set = false;
     ut_strbuf_appendstr(&body, "],\"systems\":{");
-    AddSystemsToJson(&body, stats->frame_systems, "on_frame", &set, measurements);
+    AddSystemsToJson(&body, stats->on_load_systems, "on_load", &set, measurements);
+    AddSystemsToJson(&body, stats->pre_frame_systems, "pre_frame", &set, measurements);
+    AddSystemsToJson(&body, stats->on_frame_systems, "on_frame", &set, measurements);
+    AddSystemsToJson(&body, stats->post_frame_systems, "post_frame", &set, measurements);
+    AddSystemsToJson(&body, stats->on_store_systems, "on_store", &set, measurements);
     AddSystemsToJson(&body, stats->on_demand_systems, "on_demand", &set, measurements);
     AddSystemsToJson(&body, stats->on_add_systems, "on_add", &set, measurements);
     AddSystemsToJson(&body, stats->on_set_systems, "on_set", &set, measurements);
@@ -438,7 +442,11 @@ void EcsAdminCollectData(EcsRows *rows) {
         AddMeasurement(&data->frame, frame);
         AddMeasurement(&data->system, system);
 
-        AddSystemMeasurement(data, &stats, stats.frame_systems, fps);
+        AddSystemMeasurement(data, &stats, stats.on_load_systems, fps);
+        AddSystemMeasurement(data, &stats, stats.pre_frame_systems, fps);
+        AddSystemMeasurement(data, &stats, stats.on_frame_systems, fps);
+        AddSystemMeasurement(data, &stats, stats.post_frame_systems, fps);
+        AddSystemMeasurement(data, &stats, stats.on_store_systems, fps);
         AddSystemMeasurement(data, &stats, stats.on_demand_systems, fps);
 
         char *json = JsonFromStats(rows->world, &stats, data);
