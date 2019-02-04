@@ -233,9 +233,6 @@ Vue.component('app-systems-feature-row', {
         &nbsp;{{feature.id}}
       </td>
       <td>
-        {{feature.entities}}
-      </td>
-      <td>
         {{feature.systems_enabled}} / {{feature.system_count}}
       </td>
       <td>
@@ -263,7 +260,6 @@ Vue.component('app-systems-features', {
           <thead>
             <tr>
               <th>id</th>
-              <th>signature</th>
               <th>enabled</th>
               <th></th>
             </tr>
@@ -286,9 +282,11 @@ Vue.component('app-system-data', {
   methods: {
     countFwSystems(systems) {
       var result = 0;
-      for (var i = 0; i < systems.length; i ++) {
-        if (systems[i].is_hidden) {
-          result ++;
+      if (systems) {
+        for (var i = 0; i < systems.length; i ++) {
+          if (systems[i].is_hidden) {
+            result ++;
+          }
         }
       }
       return result;

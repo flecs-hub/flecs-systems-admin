@@ -97,10 +97,11 @@ void AddSystemsToJson(
                 ut_strbuf_appendstr(buf, ",");
             }
             ut_strbuf_append(buf,
-                "{\"id\":\"%s\",\"enabled\":%s,\"active\":%s,"\
+                "{\"handle\":%d,\"id\":\"%s\",\"enabled\":%s,\"active\":%s,"\
                 "\"tables_matched\":%u,\"entities_matched\":%u,"\
                 "\"signature\":\"%s\",\"is_hidden\":%s,\"period\":%f,"
                 "\"time_spent\":%f",
+                (uint32_t)stats[i].handle,
                 stats[i].id,
                 stats[i].enabled ? "true" : "false",
                 stats[i].active ? "true" : "false",
@@ -113,7 +114,7 @@ void AddSystemsToJson(
 
             EcsRingBuf *values = ecs_map_get(
                 data->system_measurements,
-                stats[i].system);
+                stats[i].handle);
 
             if (values) {
                 AddRingBufToJson(buf, "time_spent_1m", values);
@@ -401,9 +402,9 @@ void AddSystemMeasurement(
         EcsRingBuf *buf;
         EcsSystemStats *system = &buffer[i];
         uint64_t buf64 = 0;
-        if (!ecs_map_has(data->system_measurements, system->system, &buf64)) {
+        if (!ecs_map_has(data->system_measurements, system->handle, &buf64)) {
             buf = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT);
-            ecs_map_set(data->system_measurements, system->system, buf);
+            ecs_map_set(data->system_measurements, system->handle, buf);
         } else {
             buf = (EcsRingBuf*)(uintptr_t)buf64;
         }

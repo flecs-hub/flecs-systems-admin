@@ -6,7 +6,7 @@ var colors = [
     "#8B2DCA",
     "#5AB7CC",
     "#C28DCC",
-    
+
     "#5BE595",
     "#46D9E6",
     "#4596E5",
@@ -74,12 +74,14 @@ var app = new Vue({
       return this.system_colors[system.id];
     },
     set_system_array_colors(systems) {
-      for (var i = 0; i < systems.length; i ++) {
-        var system = systems[i];
-        var color = this.get_system_color(system);
-        if (!color) {
-          this.system_colors[system.id] = colors[this.last_color];
-          this.last_color = (this.last_color + 1) % colors.length;
+      if (systems) {
+        for (var i = 0; i < systems.length; i ++) {
+          var system = systems[i];
+          var color = this.get_system_color(system);
+          if (!color) {
+            this.system_colors[system.id] = colors[this.last_color];
+            this.last_color = (this.last_color + 1) % colors.length;
+          }
         }
       }
     },

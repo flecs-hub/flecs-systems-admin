@@ -243,11 +243,13 @@ var app_performance = {
 function systemActivity1m(system) {
   var result = 0;
   var max = 0;
-  for (var i = 0; i < system.time_spent_1m.length; i ++) {
-    var time_spent = system.time_spent_1m[i];
-    result += time_spent;
-    if (time_spent > max) {
-      max = time_spent;
+  if (system) {
+    for (var i = 0; i < system.time_spent_1m.length; i ++) {
+      var time_spent = system.time_spent_1m[i];
+      result += time_spent;
+      if (time_spent > max) {
+        max = time_spent;
+      }
     }
   }
   return {total: result, max: max};
