@@ -278,6 +278,9 @@ bool RequestWorld(
         } else if (!strcmp(request->params, "system_profiling=false")) {
             ecs_measure_system_time(world, false);
         }
+    } else {
+        fprintf(stderr, "unknown method received for world endpoint");
+        return false;
     }
 
     return true;
@@ -423,6 +426,9 @@ void EcsAdminCollectData(EcsRows *rows) {
 
     EcsWorldStats stats = {0};
     ecs_get_stats(rows->world, &stats);
+
+    printf("Collect data (tick_count = %d, delta_time = %f)\n",
+        stats.tick_count, rows->delta_time);
 
     if (!stats.tick_count || !rows->delta_time) {
         return;
@@ -581,7 +587,7 @@ void EcsSystemsAdmin(
     ecs_measure_frame_time(world, true);
 
     ut_init("admin");
-    ut_load_init(NULL, NULL, NULL);
+    ut_load_init(NULL, NULL, NULL, NULL);
 
     handles->Admin = EcsAdmin_h;
 }
