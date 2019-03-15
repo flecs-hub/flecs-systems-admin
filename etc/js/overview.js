@@ -133,7 +133,7 @@ var app_overview = {
         'Components',
         'Entities',
         'Systems',
-        'Families',
+        'Types',
         'Tables',
         'Stage',
         'World'

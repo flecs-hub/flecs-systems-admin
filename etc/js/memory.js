@@ -34,7 +34,7 @@ var app_mem = {
         'Components',
         'Entities',
         'Systems',
-        'Families',
+        'Types',
         'Tables',
         'Stage',
         'World'
@@ -246,7 +246,7 @@ Vue.component('app-mem-tables', {
         <table>
           <thead>
             <tr>
-              <th>family id</th>
+              <th>type id</th>
               <th>components</th>
               <th>entities</th>
               <th>memory used</th>
