@@ -304,9 +304,23 @@ Vue.component('app-system-data', {
       return framework_systems;
     },
     getReactiveSystems() {
-      return this.world.systems.on_add.length +
-          this.world.systems.on_set.length +
-          this.world.systems.on_remove.length;
+      var length = 0;
+      if (this.world.systems.on_add) length += this.world.systems.on_add.length;
+      if (this.world.systems.on_remove) length += this.world.systems.on_remove.length;
+      if (this.world.systems.on_set) length += this.world.systems.on_set.length;
+      return length;
+    },
+    getOnFrameSystems() {
+      var length = 0;
+      if (this.world.systems.pre_frame) length += this.world.systems.pre_frame.length;
+      if (this.world.systems.on_frame) length += this.world.systems.on_frame.length;
+      if (this.world.systems.post_frame) length += this.world.systems.post_frame.length;
+      return length;
+    },
+    getManualSystems() {
+      var length = 0;
+      if (this.world.systems.on_demand) length += this.world.systems.on_demand.length;
+      return length;
     }
   },
   template: `
@@ -318,15 +332,15 @@ Vue.component('app-system-data', {
               <th>total systems</th>
               <th>hidden systems</th>
               <th>on frame systems</th>
-              <th>on demand systems</th>
+              <th>manual systems</th>
               <th>reactive systems</th>
             </tr>
           </thead>
           <tbody v-if="world && world.memory && world.memory.total">
             <td>{{world.system_count}}</td>
             <td>{{getFrameworkSystems()}}</td>
-            <td>{{world.systems.on_frame.length}}</td>
-            <td>{{world.systems.on_demand.length}}</td>
+            <td>{{getOnFrameSystems()}}</td>
+            <td>{{getManualSystems()}}</td>
             <td>{{getReactiveSystems()}}</td>
           </tbody>
         </table>

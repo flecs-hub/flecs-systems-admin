@@ -4,10 +4,10 @@
 
 #define MEASUREMENT_COUNT (60)
 
-typedef struct _EcsAdminCtx {
+typedef struct EcsAdminCtx {
     EcsComponentsHttpHandles http;
     EcsEntity admin_measurement_handle;
-} _EcsAdminCtx;
+} EcsAdminCtx;
 
 typedef struct Measurement {
     float current;
@@ -17,7 +17,7 @@ typedef struct Measurement {
     EcsRingBuf *max_1h;
 } Measurement;
 
-typedef struct _EcsAdminMeasurement {
+typedef struct EcsAdminMeasurement {
     Measurement fps;
     Measurement frame;
     Measurement system;
@@ -25,7 +25,7 @@ typedef struct _EcsAdminMeasurement {
     uint32_t tick;
     char *stats_json;
     pthread_mutex_t lock;
-} _EcsAdminMeasurement;
+} EcsAdminMeasurement;
 
 const EcsArrayParams double_params = {
     .element_size = sizeof(double)
@@ -77,7 +77,7 @@ void AddSystemsToJson(
     EcsArray *systems,
     const char *json_member,
     bool *set,
-    _EcsAdminMeasurement *data)
+    EcsAdminMeasurement *data)
 {
     uint32_t i, count = ecs_array_count(systems);
     if (count) {
@@ -160,7 +160,7 @@ static
 char* JsonFromStats(
     EcsWorld *world,
     EcsWorldStats *stats,
-    _EcsAdminMeasurement *measurements)
+    EcsAdminMeasurement *measurements)
 {
     ut_strbuf body = UT_STRBUF_INIT;
 
@@ -249,8 +249,8 @@ bool RequestWorld(
     EcsHttpReply *reply)
 {
     if (request->method == EcsHttpGet) {
-        EcsEntity stats_handle = *(EcsEntity*)endpoint->ctx;
-        _EcsAdminMeasurement *stats = ecs_get_ptr(world, entity, stats_handle);
+        EcsType TEcsAdminMeasurement = (EcsType)(uintptr_t)endpoint->ctx;
+        EcsAdminMeasurement *stats = ecs_get_ptr(world, entity, EcsAdminMeasurement);
 
         char *stats_json = NULL;
         pthread_mutex_lock(&stats->lock);
@@ -387,7 +387,7 @@ void AddMeasurement(
 /* Utility to keep track of history for system buffers */
 static
 void AddSystemMeasurement(
-    _EcsAdminMeasurement *data,
+    EcsAdminMeasurement *data,
     EcsWorldStats *stats,
     EcsArray *systems,
     double fps)
@@ -422,21 +422,18 @@ void AddSystemMeasurement(
 /* System that periodically prepares statistics as JSON for the admin server */
 static
 void EcsAdminCollectData(EcsRows *rows) {
-    void *row;
-
     EcsWorldStats stats = {0};
+    
     ecs_get_stats(rows->world, &stats);
 
-    printf("Collect data (tick_count = %d, delta_time = %f)\n",
-        stats.tick_count, rows->delta_time);
+    EcsAdminMeasurement *data = ecs_column(rows, EcsAdminMeasurement, 1);
 
     if (!stats.tick_count || !rows->delta_time) {
         return;
     }
 
-    for (row = rows->first; row < rows->last; row = ecs_next(rows, row)) {
-        _EcsAdminMeasurement *data = ecs_data(rows, row, 0);
-
+    int i;
+    for (i = rows->begin; i < rows->end; i ++) {
         double fps = rows->delta_time
           ? (double)stats.tick_count / rows->delta_time
           : 0
@@ -445,25 +442,25 @@ void EcsAdminCollectData(EcsRows *rows) {
         double frame = (stats.frame_time / stats.tick_count) * fps * 100;
         double system = (stats.system_time / stats.tick_count) * fps * 100;
 
-        AddMeasurement(&data->fps, fps);
-        AddMeasurement(&data->frame, frame);
-        AddMeasurement(&data->system, system);
+        AddMeasurement(&data[i].fps, fps);
+        AddMeasurement(&data[i].frame, frame);
+        AddMeasurement(&data[i].system, system);
 
-        AddSystemMeasurement(data, &stats, stats.on_load_systems, fps);
-        AddSystemMeasurement(data, &stats, stats.pre_frame_systems, fps);
-        AddSystemMeasurement(data, &stats, stats.on_frame_systems, fps);
-        AddSystemMeasurement(data, &stats, stats.post_frame_systems, fps);
-        AddSystemMeasurement(data, &stats, stats.on_store_systems, fps);
-        AddSystemMeasurement(data, &stats, stats.on_demand_systems, fps);
+        AddSystemMeasurement(&data[i], &stats, stats.on_load_systems, fps);
+        AddSystemMeasurement(&data[i], &stats, stats.pre_frame_systems, fps);
+        AddSystemMeasurement(&data[i], &stats, stats.on_frame_systems, fps);
+        AddSystemMeasurement(&data[i], &stats, stats.post_frame_systems, fps);
+        AddSystemMeasurement(&data[i], &stats, stats.on_store_systems, fps);
+        AddSystemMeasurement(&data[i], &stats, stats.on_demand_systems, fps);
 
-        char *json = JsonFromStats(rows->world, &stats, data);
+        char *json = JsonFromStats(rows->world, &stats, &data[i]);
 
-        pthread_mutex_lock(&data->lock);
-        if (data->stats_json) {
-            free(data->stats_json);
+        pthread_mutex_lock(&data[i].lock);
+        if (data[i].stats_json) {
+            free(data[i].stats_json);
         }
-        data->stats_json = json;
-        pthread_mutex_unlock(&data->lock);
+        data[i].stats_json = json;
+        pthread_mutex_unlock(&data[i].lock);
     }
 
     ecs_free_stats(rows->world, &stats);
@@ -486,40 +483,42 @@ Measurement InitMeasurement(void)
 static
 void EcsAdminStart(EcsRows *rows) {
     EcsWorld *world = rows->world;
-    _EcsAdminCtx *ctx = ecs_get_system_context(world, rows->system);
-    EcsEntity _EcsAdminMeasurement_h = ctx->admin_measurement_handle;
-    EcsComponentsHttp_DeclareHandles(ctx->http);
+    EcsEntity *entities = ecs_column(rows, EcsEntity, 0);
+    EcsAdmin *admin = ecs_column(rows, EcsAdmin, 1);
+    
+    EcsType TEcsAdminMeasurement = ecs_column_type(rows, 2);
+    ECS_IMPORT_COLUMN(rows, EcsComponentsHttp, 3);
 
-    void *row;
-    for (row = rows->first; row < rows->last; row = ecs_next(rows, row)) {
-        EcsEntity server = ecs_entity(rows, row, 0);
-        EcsAdmin *data = ecs_data(rows, row, 0);
-
+    int i;
+    for (i = rows->begin; i < rows->end; i ++) {
         pthread_mutex_t stats_lock;
         pthread_mutex_init(&stats_lock, NULL);
 
-        ecs_set(world, server, EcsHttpServer, {.port = data->port});
-          EcsEntity e_world = ecs_new(world, server);
+        EcsEntity server = entities[i];
+
+        ecs_set(world, server, EcsHttpServer, {.port = admin[i].port});
+          EcsEntity e_world = ecs_new_child(world, server, NULL, 0);
             ecs_set(world, e_world, EcsHttpEndpoint, {
                 .url = "world",
                 .action = RequestWorld,
-                .ctx = &ctx->admin_measurement_handle,
-                .synchronous = false });
+                .ctx = (void*)(uintptr_t)TEcsAdminMeasurement,
+                .synchronous = false 
+            });
 
-            ecs_set(world, e_world, _EcsAdminMeasurement, {
+            ecs_set(world, e_world, EcsAdminMeasurement, {
               .fps = InitMeasurement(),
               .frame = InitMeasurement(),
               .system = InitMeasurement(),
               .lock = stats_lock
             });
 
-          EcsEntity e_systems = ecs_new(world, server);
+          EcsEntity e_systems = ecs_new_child(world, server, NULL, 0);
             ecs_set(world, e_systems, EcsHttpEndpoint, {
                 .url = "systems",
                 .action = RequestSystems,
                 .synchronous = true });
 
-          EcsEntity e_files = ecs_new(world, server);
+          EcsEntity e_files = ecs_new_child(world, server, NULL, 0);
             ecs_set(world, e_files, EcsHttpEndpoint, {
                 .url = "",
                 .action = RequestFiles,
@@ -541,12 +540,12 @@ void FreeMeasurement(
 /* System that cleans up data from EcsAdminMeasurement component */
 static
 void EcsAdminMeasurementDeinit(EcsRows *rows) {
-    void *row;
-    for (row = rows->first; row < rows->last; row = ecs_next(rows, row)) {
-        _EcsAdminMeasurement *ctx = ecs_data(rows, row, 0);
-        FreeMeasurement(&ctx->fps);
-        FreeMeasurement(&ctx->frame);
-        FreeMeasurement(&ctx->system);
+    EcsAdminMeasurement *data = ecs_column(rows, EcsAdminMeasurement, 1);
+    int i;
+    for (i = rows->begin; i < rows->end; i ++) {
+        FreeMeasurement(&data[i].fps);
+        FreeMeasurement(&data[i].frame);
+        FreeMeasurement(&data[i].system);
     }
 }
 
@@ -562,26 +561,16 @@ void EcsSystemsAdmin(
 
     /* Register EcsAdmin components */
     ECS_COMPONENT(world, EcsAdmin);
-    ECS_COMPONENT(world, _EcsAdminMeasurement);
-    ECS_COMPONENT(world, _EcsAdminCtx);
+    ECS_COMPONENT(world, EcsAdminMeasurement);
+    ECS_COMPONENT(world, EcsAdminCtx);
 
     /* Start admin server when an EcsAdmin component has been initialized */
-    ECS_SYSTEM(world, EcsAdminStart, EcsOnSet, EcsAdmin);
-    ECS_SYSTEM(world, EcsAdminCollectData, EcsOnStore, _EcsAdminMeasurement);
-    ECS_SYSTEM(world, EcsAdminMeasurementDeinit, EcsOnRemove, _EcsAdminMeasurement);
-
-    /* Make EcsComponentsHttp handles available to EcsAdminStart stystem */
-    ecs_set_system_context(world, EcsAdminStart_h, _EcsAdminCtx, {
-        .http = EcsComponentsHttp_h,
-        .admin_measurement_handle = _EcsAdminMeasurement_h});
-
-    /* Mark admin systems as framework systems so they don't clutter the UI */
-    ecs_add(world, EcsAdminStart_h, EcsHidden_h);
-    ecs_add(world, EcsAdminCollectData_h, EcsHidden_h);
-    ecs_add(world, EcsAdminMeasurementDeinit_h, EcsHidden_h);
+    ECS_SYSTEM(world, EcsAdminStart, EcsOnSet, EcsAdmin, ID.EcsAdminMeasurement, $EcsComponentsHttp, SYSTEM.EcsHidden);
+    ECS_SYSTEM(world, EcsAdminCollectData, EcsOnStore, EcsAdminMeasurement, SYSTEM.EcsHidden);
+    ECS_SYSTEM(world, EcsAdminMeasurementDeinit, EcsOnRemove, EcsAdminMeasurement, SYSTEM.EcsHidden);
 
     /* Only execute data collection system once per second */
-    ecs_set_period(world, EcsAdminCollectData_h, 1.0);
+    ecs_set_period(world, EcsAdminCollectData, 1.0);
 
     /* Enable frame profiling */
     ecs_measure_frame_time(world, true);
@@ -589,5 +578,5 @@ void EcsSystemsAdmin(
     ut_init("admin");
     ut_load_init(NULL, NULL, NULL, NULL);
 
-    handles->Admin = EcsAdmin_h;
+    ECS_SET_COMPONENT(handles, EcsAdmin);
 }

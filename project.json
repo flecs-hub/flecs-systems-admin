@@ -1,13 +1,13 @@
 {
-    "id":"reflecs.systems.admin",
+    "id":"flecs.systems.admin",
     "type":"package",
     "value": {
         "author": "Sander Mertens",
-        "description": "Web based dashboard for reflecs",
+        "description": "Web based dashboard for flecs",
         "use": [
-            "reflecs",
-            "reflecs.util",
-            "reflecs.components.http",
+            "flecs",
+            "flecs.util",
+            "flecs.components.http",
             "bake.util"
         ]
     },

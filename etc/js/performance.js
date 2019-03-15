@@ -258,11 +258,12 @@ function systemActivity1m(system) {
 function getActiveSystems1m(world, include_other = true) {
   var result = [];
   var systems = [];
-  systems = systems.concat(world.systems.on_load);
-  systems = systems.concat(world.systems.pre_frame);
-  systems = systems.concat(world.systems.on_frame);
-  systems = systems.concat(world.systems.post_frame);
-  systems = systems.concat(world.systems.on_store);
+  if (world.systems.on_load) systems = systems.concat(world.systems.on_load);
+  if (world.systems.pre_frame) systems = systems.concat(world.systems.pre_frame);
+  if (world.systems.on_frame) systems = systems.concat(world.systems.on_frame);
+  if (world.systems.post_frame) systems = systems.concat(world.systems.post_frame);
+  if (world.systems.on_store) systems = systems.concat(world.systems.on_store);
+
   var threshold = 1.0 * systems[0].time_spent_1m.length;
   var other = 0;
 

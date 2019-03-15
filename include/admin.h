@@ -1,5 +1,5 @@
-#ifndef REFLECS_SYSTEMS_ADMIN_H
-#define REFLECS_SYSTEMS_ADMIN_H
+#ifndef FLECS_SYSTEMS_ADMIN_H
+#define FLECS_SYSTEMS_ADMIN_H
 
 #include "bake_config.h"
 
@@ -12,7 +12,7 @@ typedef struct EcsAdmin {
 } EcsAdmin;
 
 typedef struct EcsSystemsAdminHandles {
-   EcsEntity Admin;
+   ECS_DECLARE_COMPONENT(EcsAdmin);
 } EcsSystemsAdminHandles;
 
 void EcsSystemsAdmin(
@@ -20,8 +20,8 @@ void EcsSystemsAdmin(
     int flags,
     void *handles_out);
 
-#define EcsSystemsAdmin_DeclareHandles(handles)\
-    EcsDeclareHandle(handles, Admin);
+#define EcsSystemsAdmin_ImportHandles(handles)\
+    ECS_IMPORT_COMPONENT(handles, EcsAdmin);
 
 #ifdef __cplusplus
 }
