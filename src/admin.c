@@ -483,7 +483,6 @@ Measurement InitMeasurement(void)
 static
 void EcsAdminStart(EcsRows *rows) {
     EcsWorld *world = rows->world;
-    EcsEntity *entities = ecs_column(rows, EcsEntity, 0);
     EcsAdmin *admin = ecs_column(rows, EcsAdmin, 1);
     
     EcsType TEcsAdminMeasurement = ecs_column_type(rows, 2);
@@ -494,7 +493,7 @@ void EcsAdminStart(EcsRows *rows) {
         pthread_mutex_t stats_lock;
         pthread_mutex_init(&stats_lock, NULL);
 
-        EcsEntity server = entities[i];
+        EcsEntity server = rows->entities[i];
 
         ecs_set(world, server, EcsHttpServer, {.port = admin[i].port});
           EcsEntity e_world = ecs_new_child(world, server, NULL, 0);
