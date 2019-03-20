@@ -433,7 +433,7 @@ void EcsAdminCollectData(EcsRows *rows) {
     }
 
     int i;
-    for (i = rows->begin; i < rows->end; i ++) {
+    for (i = 0; i < rows->count; i ++) {
         double fps = rows->delta_time
           ? (double)stats.tick_count / rows->delta_time
           : 0
@@ -489,7 +489,7 @@ void EcsAdminStart(EcsRows *rows) {
     ECS_IMPORT_COLUMN(rows, EcsComponentsHttp, 3);
 
     int i;
-    for (i = rows->begin; i < rows->end; i ++) {
+    for (i = 0; i < rows->count; i ++) {
         pthread_mutex_t stats_lock;
         pthread_mutex_init(&stats_lock, NULL);
 
@@ -497,6 +497,7 @@ void EcsAdminStart(EcsRows *rows) {
 
         ecs_set(world, server, EcsHttpServer, {.port = admin[i].port});
           EcsEntity e_world = ecs_new_child(world, server, NULL, 0);
+            printf("server = %d\n", server);
             ecs_set(world, e_world, EcsHttpEndpoint, {
                 .url = "world",
                 .action = RequestWorld,
@@ -541,7 +542,7 @@ static
 void EcsAdminMeasurementDeinit(EcsRows *rows) {
     EcsAdminMeasurement *data = ecs_column(rows, EcsAdminMeasurement, 1);
     int i;
-    for (i = rows->begin; i < rows->end; i ++) {
+    for (i = 0; i < rows->count; i ++) {
         FreeMeasurement(&data[i].fps);
         FreeMeasurement(&data[i].frame);
         FreeMeasurement(&data[i].system);
