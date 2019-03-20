@@ -497,7 +497,6 @@ void EcsAdminStart(EcsRows *rows) {
 
         ecs_set(world, server, EcsHttpServer, {.port = admin[i].port});
           EcsEntity e_world = ecs_new_child(world, server, NULL, 0);
-            printf("server = %d\n", server);
             ecs_set(world, e_world, EcsHttpEndpoint, {
                 .url = "world",
                 .action = RequestWorld,
