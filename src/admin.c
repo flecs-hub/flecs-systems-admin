@@ -6,28 +6,28 @@
 
 typedef struct EcsAdminCtx {
     EcsComponentsHttpHandles http;
-    EcsEntity admin_measurement_handle;
+    ecs_entity_t admin_measurement_handle;
 } EcsAdminCtx;
 
 typedef struct Measurement {
     float current;
-    EcsRingBuf *data_1m;
-    EcsRingBuf *data_1h;
-    EcsRingBuf *min_1h;
-    EcsRingBuf *max_1h;
+    ecs_ringbuf_t *data_1m;
+    ecs_ringbuf_t *data_1h;
+    ecs_ringbuf_t *min_1h;
+    ecs_ringbuf_t *max_1h;
 } Measurement;
 
 typedef struct EcsAdminMeasurement {
     Measurement fps;
     Measurement frame;
     Measurement system;
-    EcsMap *system_measurements;
+    ecs_map_t *system_measurements;
     uint32_t tick;
     char *stats_json;
     pthread_mutex_t lock;
 } EcsAdminMeasurement;
 
-const EcsArrayParams double_params = {
+const ecs_array_params_t double_params = {
     .element_size = sizeof(double)
 };
 
@@ -36,7 +36,7 @@ static
 void AddRingBufToJson(
     ut_strbuf *buf,
     const char *member,
-    EcsRingBuf *values)
+    ecs_ringbuf_t *values)
 {
     uint32_t i, count = ecs_ringbuf_count(values);
     ut_strbuf_append(buf, ",\"%s\":[", member);
@@ -74,7 +74,7 @@ void AddMeasurementToJson(
 static
 void AddSystemsToJson(
     ut_strbuf *buf,
-    EcsArray *systems,
+    ecs_array_t *systems,
     const char *json_member,
     bool *set,
     EcsAdminMeasurement *data)
@@ -112,7 +112,7 @@ void AddSystemsToJson(
                 stats[i].period,
                 (stats[i].time_spent / (frame_time * fps)) * 100 * 100);
 
-            EcsRingBuf *values = ecs_map_get(
+            ecs_ringbuf_t *values = ecs_map_get(
                 data->system_measurements,
                 stats[i].handle);
 
@@ -130,7 +130,7 @@ void AddSystemsToJson(
 static
 void AddFeaturesToJson(
     ut_strbuf *buf,
-    EcsArray *features)
+    ecs_array_t *features)
 {
     uint32_t i, count = ecs_array_count(features);
 
@@ -243,13 +243,13 @@ char* JsonFromStats(
 static
 bool RequestWorld(
     ecs_world_t *world,
-    EcsEntity entity,
+    ecs_entity_t entity,
     EcsHttpEndpoint *endpoint,
     EcsHttpRequest *request,
     EcsHttpReply *reply)
 {
     if (request->method == EcsHttpGet) {
-        EcsType TEcsAdminMeasurement = (EcsType)(uintptr_t)endpoint->ctx;
+        ecs_type_t TEcsAdminMeasurement = (ecs_type_t)(uintptr_t)endpoint->ctx;
         EcsAdminMeasurement *stats = ecs_get_ptr(world, entity, EcsAdminMeasurement);
 
         char *stats_json = NULL;
@@ -290,14 +290,14 @@ bool RequestWorld(
 static
 bool RequestSystems(
     ecs_world_t *world,
-    EcsEntity entity,
+    ecs_entity_t entity,
     EcsHttpEndpoint *endpoint,
     EcsHttpRequest *request,
     EcsHttpReply *reply)
 {
     ut_strbuf body = UT_STRBUF_INIT;
 
-    EcsEntity system = ecs_lookup(world, request->relative_url);
+    ecs_entity_t system = ecs_lookup(world, request->relative_url);
     if (!system) {
         return false;
     }
@@ -319,7 +319,7 @@ bool RequestSystems(
 static
 bool RequestFiles(
     ecs_world_t *world,
-    EcsEntity entity,
+    ecs_entity_t entity,
     EcsHttpEndpoint *endpoint,
     EcsHttpRequest *request,
     EcsHttpReply *reply)
@@ -389,7 +389,7 @@ static
 void AddSystemMeasurement(
     EcsAdminMeasurement *data,
     ecs_world_tStats *stats,
-    EcsArray *systems,
+    ecs_array_t *systems,
     double fps)
 {
     uint32_t i, count = ecs_array_count(systems);
@@ -402,14 +402,14 @@ void AddSystemMeasurement(
     }
 
     for (i = 0; i < count; i ++) {
-        EcsRingBuf *buf;
+        ecs_ringbuf_t *buf;
         EcsSystemStats *system = &buffer[i];
         uint64_t buf64 = 0;
         if (!ecs_map_has(data->system_measurements, system->handle, &buf64)) {
             buf = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT);
             ecs_map_set(data->system_measurements, system->handle, buf);
         } else {
-            buf = (EcsRingBuf*)(uintptr_t)buf64;
+            buf = (ecs_ringbuf_t*)(uintptr_t)buf64;
         }
 
         double *value = ecs_ringbuf_push(buf, &double_params);
@@ -485,7 +485,7 @@ void EcsAdminStart(ecs_rows_t *rows) {
     ecs_world_t *world = rows->world;
     EcsAdmin *admin = ecs_column(rows, EcsAdmin, 1);
     
-    EcsType TEcsAdminMeasurement = ecs_column_type(rows, 2);
+    ecs_type_t TEcsAdminMeasurement = ecs_column_type(rows, 2);
     ECS_IMPORT_COLUMN(rows, EcsComponentsHttp, 3);
 
     int i;
@@ -493,10 +493,10 @@ void EcsAdminStart(ecs_rows_t *rows) {
         pthread_mutex_t stats_lock;
         pthread_mutex_init(&stats_lock, NULL);
 
-        EcsEntity server = rows->entities[i];
+        ecs_entity_t server = rows->entities[i];
 
         ecs_set(world, server, EcsHttpServer, {.port = admin[i].port});
-          EcsEntity e_world = ecs_new_child(world, server, NULL, 0);
+          ecs_entity_t e_world = ecs_new_child(world, server, NULL, 0);
             ecs_set(world, e_world, EcsHttpEndpoint, {
                 .url = "world",
                 .action = RequestWorld,
@@ -511,13 +511,13 @@ void EcsAdminStart(ecs_rows_t *rows) {
               .lock = stats_lock
             });
 
-          EcsEntity e_systems = ecs_new_child(world, server, NULL, 0);
+          ecs_entity_t e_systems = ecs_new_child(world, server, NULL, 0);
             ecs_set(world, e_systems, EcsHttpEndpoint, {
                 .url = "systems",
                 .action = RequestSystems,
                 .synchronous = true });
 
-          EcsEntity e_files = ecs_new_child(world, server, NULL, 0);
+          ecs_entity_t e_files = ecs_new_child(world, server, NULL, 0);
             ecs_set(world, e_files, EcsHttpEndpoint, {
                 .url = "",
                 .action = RequestFiles,
