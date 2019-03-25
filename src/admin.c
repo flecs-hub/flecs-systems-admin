@@ -158,8 +158,8 @@ void AddFeaturesToJson(
 /* Utility function that creates a JSON string from world statistics */
 static
 char* JsonFromStats(
-    EcsWorld *world,
-    EcsWorldStats *stats,
+    ecs_world_t *world,
+    ecs_world_tStats *stats,
     EcsAdminMeasurement *measurements)
 {
     ut_strbuf body = UT_STRBUF_INIT;
@@ -242,7 +242,7 @@ char* JsonFromStats(
 /* HTTP endpoint that returns statistics for the world & configures world */
 static
 bool RequestWorld(
-    EcsWorld *world,
+    ecs_world_t *world,
     EcsEntity entity,
     EcsHttpEndpoint *endpoint,
     EcsHttpRequest *request,
@@ -289,7 +289,7 @@ bool RequestWorld(
 /* HTTP endpoint that enables/disables systems */
 static
 bool RequestSystems(
-    EcsWorld *world,
+    ecs_world_t *world,
     EcsEntity entity,
     EcsHttpEndpoint *endpoint,
     EcsHttpRequest *request,
@@ -318,7 +318,7 @@ bool RequestSystems(
 /* HTTP endpoint that returns file resources */
 static
 bool RequestFiles(
-    EcsWorld *world,
+    ecs_world_t *world,
     EcsEntity entity,
     EcsHttpEndpoint *endpoint,
     EcsHttpRequest *request,
@@ -388,7 +388,7 @@ void AddMeasurement(
 static
 void AddSystemMeasurement(
     EcsAdminMeasurement *data,
-    EcsWorldStats *stats,
+    ecs_world_tStats *stats,
     EcsArray *systems,
     double fps)
 {
@@ -421,8 +421,8 @@ void AddSystemMeasurement(
 
 /* System that periodically prepares statistics as JSON for the admin server */
 static
-void EcsAdminCollectData(EcsRows *rows) {
-    EcsWorldStats stats = {0};
+void EcsAdminCollectData(ecs_rows_t *rows) {
+    ecs_world_tStats stats = {0};
     
     ecs_get_stats(rows->world, &stats);
 
@@ -481,8 +481,8 @@ Measurement InitMeasurement(void)
 
 /* System that starts admin server and inits EcsAdminMeasurement component */
 static
-void EcsAdminStart(EcsRows *rows) {
-    EcsWorld *world = rows->world;
+void EcsAdminStart(ecs_rows_t *rows) {
+    ecs_world_t *world = rows->world;
     EcsAdmin *admin = ecs_column(rows, EcsAdmin, 1);
     
     EcsType TEcsAdminMeasurement = ecs_column_type(rows, 2);
@@ -538,7 +538,7 @@ void FreeMeasurement(
 
 /* System that cleans up data from EcsAdminMeasurement component */
 static
-void EcsAdminMeasurementDeinit(EcsRows *rows) {
+void EcsAdminMeasurementDeinit(ecs_rows_t *rows) {
     EcsAdminMeasurement *data = ecs_column(rows, EcsAdminMeasurement, 1);
     int i;
     for (i = 0; i < rows->count; i ++) {
@@ -549,7 +549,7 @@ void EcsAdminMeasurementDeinit(EcsRows *rows) {
 }
 
 void EcsSystemsAdmin(
-    EcsWorld *world,
+    ecs_world_t *world,
     int flags,
     void *handles_out)
 {

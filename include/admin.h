@@ -16,7 +16,7 @@ typedef struct EcsSystemsAdminHandles {
 } EcsSystemsAdminHandles;
 
 void EcsSystemsAdmin(
-    EcsWorld *world,
+    ecs_world_t *world,
     int flags,
     void *handles_out);
 
