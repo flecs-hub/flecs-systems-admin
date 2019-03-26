@@ -457,7 +457,7 @@ void EcsAdminCollectData(ecs_rows_t *rows) {
 
         pthread_mutex_lock(&data[i].lock);
         if (data[i].stats_json) {
-            free(data[i].stats_json);
+            ecs_os_free(data[i].stats_json);
         }
         data[i].stats_json = json;
         pthread_mutex_unlock(&data[i].lock);
