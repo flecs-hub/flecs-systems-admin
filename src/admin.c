@@ -159,7 +159,7 @@ void AddFeaturesToJson(
 static
 char* JsonFromStats(
     ecs_world_t *world,
-    ecs_world_tStats *stats,
+    ecs_world_stats_t *stats,
     EcsAdminMeasurement *measurements)
 {
     ut_strbuf body = UT_STRBUF_INIT;
@@ -388,7 +388,7 @@ void AddMeasurement(
 static
 void AddSystemMeasurement(
     EcsAdminMeasurement *data,
-    ecs_world_tStats *stats,
+    ecs_world_stats_t *stats,
     ecs_array_t *systems,
     double fps)
 {
@@ -422,7 +422,7 @@ void AddSystemMeasurement(
 /* System that periodically prepares statistics as JSON for the admin server */
 static
 void EcsAdminCollectData(ecs_rows_t *rows) {
-    ecs_world_tStats stats = {0};
+    ecs_world_stats_t stats = {0};
     
     ecs_get_stats(rows->world, &stats);
 
@@ -463,7 +463,7 @@ void EcsAdminCollectData(ecs_rows_t *rows) {
         pthread_mutex_unlock(&data[i].lock);
     }
 
-    ecs_free_stats(rows->world, &stats);
+    ecs_free_stats(&stats);
 }
 
 static
