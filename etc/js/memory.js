@@ -220,6 +220,9 @@ Vue.component('app-mem-table-row', {
     },
     toKB(num) {
       return (num / 1000).toFixed(2) + "KB";
+    },
+    tableColumns() {
+      return shortenText(this.table.columns);
     }
   },
   data: function() {
@@ -228,7 +231,7 @@ Vue.component('app-mem-table-row', {
   template: `
   <tr>
     <td>{{tableId()}}</td>
-    <td>{{table.columns}}</td>
+    <td>{{tableColumns()}}</td>
     <td>{{table.row_count}}</td>
     <td>{{toKB(table.memory_used)}}</td>
     <td>{{toKB(table.memory_allocd)}}</td>

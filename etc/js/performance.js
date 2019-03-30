@@ -259,9 +259,9 @@ function getActiveSystems1m(world, include_other = true) {
   var result = [];
   var systems = [];
   if (world.systems.on_load) systems = systems.concat(world.systems.on_load);
-  if (world.systems.pre_frame) systems = systems.concat(world.systems.pre_frame);
-  if (world.systems.on_frame) systems = systems.concat(world.systems.on_frame);
-  if (world.systems.post_frame) systems = systems.concat(world.systems.post_frame);
+  if (world.systems.pre_update) systems = systems.concat(world.systems.pre_update);
+  if (world.systems.on_update) systems = systems.concat(world.systems.on_update);
+  if (world.systems.post_update) systems = systems.concat(world.systems.post_update);
   if (world.systems.on_store) systems = systems.concat(world.systems.on_store);
 
   var threshold = 1.0 * systems[0].time_spent_1m.length;
@@ -393,7 +393,7 @@ Vue.component('app-performance-sys-1min-graph', {
     setValues() {
       var labels = [];
       var frame_pct = [];
-      var length = this.world.systems.on_frame[0].time_spent_1m.length;
+      var length = this.world.systems.on_update[0].time_spent_1m.length;
       for (var i = 0; i < length; i ++) {
           labels.push((length  - i) + "s");
       }
@@ -596,7 +596,7 @@ Vue.component('app-performance-system-table', {
               v-on:refresh="$emit('refresh', $event)">
             </app-performance-system-row>
             <app-performance-system-row
-              v-for="system in world.systems.pre_frame"
+              v-for="system in world.systems.pre_update"
               :world="world"
               :key="system.id"
               :system="system"
@@ -604,7 +604,7 @@ Vue.component('app-performance-system-table', {
               v-on:refresh="$emit('refresh', $event)">
             </app-performance-system-row>
             <app-performance-system-row
-              v-for="system in world.systems.on_frame"
+              v-for="system in world.systems.on_update"
               :world="world"
               :key="system.id"
               :system="system"
@@ -612,7 +612,7 @@ Vue.component('app-performance-system-table', {
               v-on:refresh="$emit('refresh', $event)">
             </app-performance-system-row>
             <app-performance-system-row
-              v-for="system in world.systems.post_frame"
+              v-for="system in world.systems.post_update"
               :world="world"
               :key="system.id"
               :system="system"
@@ -757,7 +757,7 @@ Vue.component('app-performance', {
 
       <div class="app-row">
         <app-performance-system-table :world="world"
-          :systems="world.systems.on_frame"
+          :systems="world.systems.on_update"
           v-on:refresh="$emit('refresh', $event)">
         </app-performance-system-table>
       </div>

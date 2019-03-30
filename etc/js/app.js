@@ -87,9 +87,9 @@ var app = new Vue({
     },
     set_system_colors() {
       this.set_system_array_colors(this.world.systems.on_load);
-      this.set_system_array_colors(this.world.systems.pre_frame);
-      this.set_system_array_colors(this.world.systems.on_frame);
-      this.set_system_array_colors(this.world.systems.post_frame);
+      this.set_system_array_colors(this.world.systems.pre_update);
+      this.set_system_array_colors(this.world.systems.on_update);
+      this.set_system_array_colors(this.world.systems.post_update);
       this.set_system_array_colors(this.world.systems.on_store);
       this.set_system_array_colors(this.world.systems.on_demand);
     },

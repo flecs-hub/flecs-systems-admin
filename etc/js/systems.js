@@ -293,9 +293,9 @@ Vue.component('app-system-data', {
     },
     getFrameworkSystems() {
       var framework_systems = this.countFwSystems(this.world.systems.on_load);
-      framework_systems += this.countFwSystems(this.world.systems.pre_frame);
-      framework_systems += this.countFwSystems(this.world.systems.on_frame);
-      framework_systems += this.countFwSystems(this.world.systems.post_frame);
+      framework_systems += this.countFwSystems(this.world.systems.pre_update);
+      framework_systems += this.countFwSystems(this.world.systems.on_update);
+      framework_systems += this.countFwSystems(this.world.systems.post_update);
       framework_systems += this.countFwSystems(this.world.systems.on_store);
       framework_systems += this.countFwSystems(this.world.systems.on_demand);
       framework_systems += this.countFwSystems(this.world.systems.on_add);
@@ -312,9 +312,9 @@ Vue.component('app-system-data', {
     },
     getOnFrameSystems() {
       var length = 0;
-      if (this.world.systems.pre_frame) length += this.world.systems.pre_frame.length;
-      if (this.world.systems.on_frame) length += this.world.systems.on_frame.length;
-      if (this.world.systems.post_frame) length += this.world.systems.post_frame.length;
+      if (this.world.systems.pre_update) length += this.world.systems.pre_update.length;
+      if (this.world.systems.on_update) length += this.world.systems.on_update.length;
+      if (this.world.systems.post_update) length += this.world.systems.post_update.length;
       return length;
     },
     getManualSystems() {
@@ -385,7 +385,7 @@ Vue.component('app-systems', {
 
       <div class="app-row">
         <app-systems-system-table :world="world"
-          :systems="world.systems.pre_frame"
+          :systems="world.systems.pre_update"
           :kind="'pre frame'"
           v-on:refresh="$emit('refresh', $event)">
         </app-systems-system-table>
@@ -393,7 +393,7 @@ Vue.component('app-systems', {
 
       <div class="app-row">
         <app-systems-system-table :world="world"
-          :systems="world.systems.on_frame"
+          :systems="world.systems.on_update"
           :kind="'on frame'"
           v-on:refresh="$emit('refresh', $event)">
         </app-systems-system-table>
@@ -401,7 +401,7 @@ Vue.component('app-systems', {
 
       <div class="app-row">
         <app-systems-system-table :world="world"
-          :systems="world.systems.post_frame"
+          :systems="world.systems.post_update"
           :kind="'post frame'"
           v-on:refresh="$emit('refresh', $event)">
         </app-systems-system-table>
