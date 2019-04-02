@@ -220,6 +220,7 @@ char* JsonFromStats(
     AddSystemsToJson(&body, stats->on_load_systems, "on_load", &set, measurements);
     AddSystemsToJson(&body, stats->pre_update_systems, "pre_update", &set, measurements);
     AddSystemsToJson(&body, stats->on_update_systems, "on_update", &set, measurements);
+    AddSystemsToJson(&body, stats->on_validate_systems, "on_validate", &set, measurements);
     AddSystemsToJson(&body, stats->post_update_systems, "post_update", &set, measurements);
     AddSystemsToJson(&body, stats->on_store_systems, "on_store", &set, measurements);
     AddSystemsToJson(&body, stats->on_demand_systems, "on_demand", &set, measurements);
@@ -449,6 +450,7 @@ void EcsAdminCollectData(ecs_rows_t *rows) {
         AddSystemMeasurement(&data[i], &stats, stats.on_load_systems, fps);
         AddSystemMeasurement(&data[i], &stats, stats.pre_update_systems, fps);
         AddSystemMeasurement(&data[i], &stats, stats.on_update_systems, fps);
+        AddSystemMeasurement(&data[i], &stats, stats.on_validate_systems, fps);
         AddSystemMeasurement(&data[i], &stats, stats.post_update_systems, fps);
         AddSystemMeasurement(&data[i], &stats, stats.on_store_systems, fps);
         AddSystemMeasurement(&data[i], &stats, stats.on_demand_systems, fps);
