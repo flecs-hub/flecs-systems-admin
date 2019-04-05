@@ -259,10 +259,12 @@ function getActiveSystems1m(world, include_other = true) {
   var result = [];
   var systems = [];
   if (world.systems.on_load) systems = systems.concat(world.systems.on_load);
+  if (world.systems.post_load) systems = systems.concat(world.systems.post_load);
   if (world.systems.pre_update) systems = systems.concat(world.systems.pre_update);
   if (world.systems.on_update) systems = systems.concat(world.systems.on_update);
   if (world.systems.on_validate) systems = systems.concat(world.systems.on_validate);
   if (world.systems.post_update) systems = systems.concat(world.systems.post_update);
+  if (world.systems.pre_store) systems = systems.concat(world.systems.pre_store);
   if (world.systems.on_store) systems = systems.concat(world.systems.on_store);
 
   var threshold = 1.0 * systems[0].time_spent_1m.length;
@@ -597,6 +599,14 @@ Vue.component('app-performance-system-table', {
               v-on:refresh="$emit('refresh', $event)">
             </app-performance-system-row>
             <app-performance-system-row
+              v-for="system in world.systems.post_load"
+              :world="world"
+              :key="system.id"
+              :system="system"
+              :frame="world.frame.current * world.fps.current"
+              v-on:refresh="$emit('refresh', $event)">
+            </app-performance-system-row>            
+            <app-performance-system-row
               v-for="system in world.systems.pre_update"
               :world="world"
               :key="system.id"
@@ -622,6 +632,14 @@ Vue.component('app-performance-system-table', {
             </app-performance-system-row>            
             <app-performance-system-row
               v-for="system in world.systems.post_update"
+              :world="world"
+              :key="system.id"
+              :system="system"
+              :frame="world.frame.current * world.fps.current"
+              v-on:refresh="$emit('refresh', $event)">
+            </app-performance-system-row>
+            <app-performance-system-row
+              v-for="system in world.systems.pre_store"
               :world="world"
               :key="system.id"
               :system="system"

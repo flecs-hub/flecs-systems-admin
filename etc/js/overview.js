@@ -389,6 +389,13 @@ Vue.component('app-systems-table', {
               v-on:refresh="$emit('refresh', $event)">
             </app-system-row>
             <app-system-row
+              v-for="system in world.systems.post_load"
+              v-if="!system.is_hidden"
+              :key="system.id"
+              :system="system"
+              v-on:refresh="$emit('refresh', $event)">
+            </app-system-row>            
+            <app-system-row
               v-for="system in world.systems.pre_update"
               v-if="!system.is_hidden"
               :key="system.id"
@@ -404,6 +411,13 @@ Vue.component('app-systems-table', {
             </app-system-row>
             <app-system-row
               v-for="system in world.systems.post_update"
+              v-if="!system.is_hidden"
+              :key="system.id"
+              :system="system"
+              v-on:refresh="$emit('refresh', $event)">
+            </app-system-row>
+            <app-system-row
+              v-for="system in world.systems.pre_store"
               v-if="!system.is_hidden"
               :key="system.id"
               :system="system"

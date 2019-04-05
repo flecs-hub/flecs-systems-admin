@@ -293,10 +293,12 @@ Vue.component('app-system-data', {
     },
     getFrameworkSystems() {
       var framework_systems = this.countFwSystems(this.world.systems.on_load);
+      framework_systems += this.countFwSystems(this.world.systems.post_load);
       framework_systems += this.countFwSystems(this.world.systems.pre_update);
       framework_systems += this.countFwSystems(this.world.systems.on_update);
       framework_systems += this.countFwSystems(this.world.systems.on_validate);
       framework_systems += this.countFwSystems(this.world.systems.post_update);
+      framework_systems += this.countFwSystems(this.world.systems.pre_store);
       framework_systems += this.countFwSystems(this.world.systems.on_store);
       framework_systems += this.countFwSystems(this.world.systems.on_demand);
       framework_systems += this.countFwSystems(this.world.systems.on_add);
@@ -387,6 +389,14 @@ Vue.component('app-systems', {
 
       <div class="app-row">
         <app-systems-system-table :world="world"
+          :systems="world.systems.post_load"
+          :kind="'post load'"
+          v-on:refresh="$emit('refresh', $event)">
+        </app-systems-system-table>
+      </div>
+
+      <div class="app-row">
+        <app-systems-system-table :world="world"
           :systems="world.systems.pre_update"
           :kind="'pre update'"
           v-on:refresh="$emit('refresh', $event)">
@@ -419,6 +429,14 @@ Vue.component('app-systems', {
 
       <div class="app-row">
         <app-systems-system-table :world="world"
+          :systems="world.systems.pre_store"
+          :kind="'pre store'"
+          v-on:refresh="$emit('refresh', $event)">
+        </app-systems-system-table>
+      </div>
+
+      <div class="app-row">
+        <app-systems-system-table :world="world"
           :systems="world.systems.on_store"
           :kind="'on store'"
           v-on:refresh="$emit('refresh', $event)">
@@ -428,7 +446,7 @@ Vue.component('app-systems', {
       <div class="app-row">
         <app-systems-system-table :world="world"
           :systems="world.systems.on_demand"
-          :kind="'on demand'"
+          :kind="'manual'"
           v-on:refresh="$emit('refresh', $event)">
         </app-systems-system-table>
       </div>
