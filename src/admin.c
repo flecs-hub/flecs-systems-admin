@@ -498,7 +498,7 @@ void EcsAdminStart(ecs_rows_t *rows) {
         ecs_entity_t server = rows->entities[i];
 
         ecs_set(world, server, EcsHttpServer, {.port = admin[i].port});
-          ecs_entity_t e_world = ecs_new_child(world, server, NULL, 0);
+          ecs_entity_t e_world = ecs_new_child(world, server, 0);
             ecs_set(world, e_world, EcsHttpEndpoint, {
                 .url = "world",
                 .action = RequestWorld,
@@ -513,13 +513,13 @@ void EcsAdminStart(ecs_rows_t *rows) {
               .lock = stats_lock
             });
 
-          ecs_entity_t e_systems = ecs_new_child(world, server, NULL, 0);
+          ecs_entity_t e_systems = ecs_new_child(world, server, 0);
             ecs_set(world, e_systems, EcsHttpEndpoint, {
                 .url = "systems",
                 .action = RequestSystems,
                 .synchronous = true });
 
-          ecs_entity_t e_files = ecs_new_child(world, server, NULL, 0);
+          ecs_entity_t e_files = ecs_new_child(world, server, 0);
             ecs_set(world, e_files, EcsHttpEndpoint, {
                 .url = "",
                 .action = RequestFiles,
