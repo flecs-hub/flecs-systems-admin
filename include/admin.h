@@ -15,6 +15,7 @@ typedef struct EcsSystemsAdminHandles {
    ECS_DECLARE_COMPONENT(EcsAdmin);
 } EcsSystemsAdminHandles;
 
+FLECS_SYSTEMS_ADMIN_EXPORT
 void EcsSystemsAdmin(
     ecs_world_t *world,
     int flags,

@@ -1,6 +1,6 @@
 #include <include/admin.h>
 #include <string.h>
-#include <pthread.h>
+
 
 #define MEASUREMENT_COUNT (60)
 
@@ -24,7 +24,7 @@ typedef struct EcsAdminMeasurement {
     ecs_map_t *system_measurements;
     uint32_t tick;
     char *stats_json;
-    pthread_mutex_t lock;
+    ecs_os_mutex_t lock;
 } EcsAdminMeasurement;
 
 const ecs_array_params_t double_params = {
@@ -256,13 +256,13 @@ bool RequestWorld(
         EcsAdminMeasurement *stats = ecs_get_ptr(world, entity, EcsAdminMeasurement);
 
         char *stats_json = NULL;
-        pthread_mutex_lock(&stats->lock);
+        ecs_os_mutex_lock(stats->lock);
 
         if (stats->stats_json) {
             stats_json = strdup(stats->stats_json);
         }
 
-        pthread_mutex_unlock(&stats->lock);
+        ecs_os_mutex_unlock(stats->lock);
 
         if (!stats_json) {
             reply->status = 204;
@@ -461,12 +461,12 @@ void EcsAdminCollectData(ecs_rows_t *rows) {
 
         char *json = JsonFromStats(rows->world, &stats, &data[i]);
 
-        pthread_mutex_lock(&data[i].lock);
+        ecs_os_mutex_lock(data[i].lock);
         if (data[i].stats_json) {
             ecs_os_free(data[i].stats_json);
         }
         data[i].stats_json = json;
-        pthread_mutex_unlock(&data[i].lock);
+        ecs_os_mutex_unlock(data[i].lock);
     }
 
     ecs_free_stats(&stats);
@@ -496,8 +496,7 @@ void EcsAdminStart(ecs_rows_t *rows) {
 
     int i;
     for (i = 0; i < rows->count; i ++) {
-        pthread_mutex_t stats_lock;
-        pthread_mutex_init(&stats_lock, NULL);
+		ecs_os_mutex_t stats_lock = ecs_os_mutex_new();
 
         ecs_entity_t server = rows->entities[i];
 

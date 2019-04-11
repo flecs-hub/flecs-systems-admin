@@ -10,8 +10,5 @@
             "flecs.components.http",
             "bake.util"
         ]
-    },
-    "lang.c": {
-        "lib": ["pthread"]
     }
 }
