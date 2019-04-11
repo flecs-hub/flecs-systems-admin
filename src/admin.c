@@ -334,7 +334,7 @@ bool RequestFiles(
         file = "index.html";
     }
 
-    const char *etc_path = ut_locate(ut_getenv("BAKE_PROJECT_ID"), NULL, UT_LOCATE_ETC);
+    const char *etc_path = ut_locate(BAKE_PROJECT_ID, NULL, UT_LOCATE_ETC);
 
     sprintf(bake_file, "%s/%s", etc_path, file);
 
