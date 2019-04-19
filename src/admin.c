@@ -27,7 +27,7 @@ typedef struct EcsAdminMeasurement {
     pthread_mutex_t lock;
 } EcsAdminMeasurement;
 
-const ecs_array_params_t double_params = {
+const ecs_vector_params_t double_params = {
     .element_size = sizeof(double)
 };
 
@@ -74,12 +74,12 @@ void AddMeasurementToJson(
 static
 void AddSystemsToJson(
     ut_strbuf *buf,
-    ecs_array_t *systems,
+    ecs_vector_t *systems,
     const char *json_member,
     bool *set,
     EcsAdminMeasurement *data)
 {
-    uint32_t i, count = ecs_array_count(systems);
+    uint32_t i, count = ecs_vector_count(systems);
     if (count) {
         if (*set) {
             ut_strbuf_appendstr(buf, ",");
@@ -91,7 +91,7 @@ void AddSystemsToJson(
         double frame_time = data->frame.current * 1.0 / fps;
 
         ut_strbuf_append(buf, "\"%s\":[", json_member);
-        EcsSystemStats *stats = ecs_array_buffer(systems);
+        EcsSystemStats *stats = ecs_vector_buffer(systems);
         for (i = 0; i < count; i ++) {
             if (i) {
                 ut_strbuf_appendstr(buf, ",");
@@ -130,13 +130,13 @@ void AddSystemsToJson(
 static
 void AddFeaturesToJson(
     ut_strbuf *buf,
-    ecs_array_t *features)
+    ecs_vector_t *features)
 {
-    uint32_t i, count = ecs_array_count(features);
+    uint32_t i, count = ecs_vector_count(features);
 
     if (count) {
         ut_strbuf_append(buf, ",\"features\":[");
-        EcsFeatureStats *stats = ecs_array_buffer(features);
+        EcsFeatureStats *stats = ecs_vector_buffer(features);
         for (i = 0; i < count; i ++) {
             if (i) {
                 ut_strbuf_appendstr(buf, ",");
@@ -192,9 +192,9 @@ char* JsonFromStats(
         stats->memory.world.allocd, stats->memory.world.used);
 
     ut_strbuf_appendstr(&body, ",\"tables\":[");
-    if (ecs_array_count(stats->tables)) {
-        EcsTableStats *tables = ecs_array_buffer(stats->tables);
-        uint32_t i = 0, count = ecs_array_count(stats->tables);
+    if (ecs_vector_count(stats->tables)) {
+        EcsTableStats *tables = ecs_vector_buffer(stats->tables);
+        uint32_t i = 0, count = ecs_vector_count(stats->tables);
         for (i = 0; i < count; i ++) {
             EcsTableStats *table = &tables[i];
             if (i) {
@@ -392,11 +392,11 @@ static
 void AddSystemMeasurement(
     EcsAdminMeasurement *data,
     ecs_world_stats_t *stats,
-    ecs_array_t *systems,
+    ecs_vector_t *systems,
     double fps)
 {
-    uint32_t i, count = ecs_array_count(systems);
-    EcsSystemStats *buffer = ecs_array_buffer(systems);
+    uint32_t i, count = ecs_vector_count(systems);
+    EcsSystemStats *buffer = ecs_vector_buffer(systems);
 
     float total = 0;
 
