@@ -11,17 +11,16 @@ typedef struct EcsAdmin {
     uint16_t port;
 } EcsAdmin;
 
-typedef struct EcsSystemsAdminHandles {
+typedef struct FlecsSystemsAdmin {
    ECS_DECLARE_COMPONENT(EcsAdmin);
-} EcsSystemsAdminHandles;
+} FlecsSystemsAdmin;
 
 FLECS_SYSTEMS_ADMIN_EXPORT
-void EcsSystemsAdmin(
+void FlecsSystemsAdminImport(
     ecs_world_t *world,
-    int flags,
-    void *handles_out);
+    int flags);
 
-#define EcsSystemsAdmin_ImportHandles(handles)\
+#define FlecsSystemsAdminImportHandles(handles)\
     ECS_IMPORT_COMPONENT(handles, EcsAdmin);
 
 #ifdef __cplusplus

@@ -5,7 +5,7 @@
 #define MEASUREMENT_COUNT (60)
 
 typedef struct EcsAdminCtx {
-    EcsComponentsHttpHandles http;
+    FlecsComponentsHttp http;
     ecs_entity_t admin_measurement_handle;
 } EcsAdminCtx;
 
@@ -91,7 +91,7 @@ void AddSystemsToJson(
         double frame_time = data->frame.current * 1.0 / fps;
 
         ut_strbuf_append(buf, "\"%s\":[", json_member);
-        EcsSystemStats *stats = ecs_vector_buffer(systems);
+        EcsSystemStats *stats = ecs_vector_first(systems);
         for (i = 0; i < count; i ++) {
             if (i) {
                 ut_strbuf_appendstr(buf, ",");
@@ -136,7 +136,7 @@ void AddFeaturesToJson(
 
     if (count) {
         ut_strbuf_append(buf, ",\"features\":[");
-        EcsFeatureStats *stats = ecs_vector_buffer(features);
+        EcsFeatureStats *stats = ecs_vector_first(features);
         for (i = 0; i < count; i ++) {
             if (i) {
                 ut_strbuf_appendstr(buf, ",");
@@ -193,7 +193,7 @@ char* JsonFromStats(
 
     ut_strbuf_appendstr(&body, ",\"tables\":[");
     if (ecs_vector_count(stats->tables)) {
-        EcsTableStats *tables = ecs_vector_buffer(stats->tables);
+        EcsTableStats *tables = ecs_vector_first(stats->tables);
         uint32_t i = 0, count = ecs_vector_count(stats->tables);
         for (i = 0; i < count; i ++) {
             EcsTableStats *table = &tables[i];
@@ -396,7 +396,7 @@ void AddSystemMeasurement(
     double fps)
 {
     uint32_t i, count = ecs_vector_count(systems);
-    EcsSystemStats *buffer = ecs_vector_buffer(systems);
+    EcsSystemStats *buffer = ecs_vector_first(systems);
 
     float total = 0;
 
@@ -492,7 +492,7 @@ void EcsAdminStart(ecs_rows_t *rows) {
     EcsAdmin *admin = ecs_column(rows, EcsAdmin, 1);
     
     ecs_type_t TEcsAdminMeasurement = ecs_column_type(rows, 2);
-    ECS_IMPORT_COLUMN(rows, EcsComponentsHttp, 3);
+    ECS_IMPORT_COLUMN(rows, FlecsComponentsHttp, 3);
 
     int i;
     for (i = 0; i < rows->count; i ++) {
@@ -553,15 +553,14 @@ void EcsAdminMeasurementDeinit(ecs_rows_t *rows) {
     }
 }
 
-void EcsSystemsAdmin(
+void FlecsSystemsAdminImport(
     ecs_world_t *world,
-    int flags,
-    void *handles_out)
+    int flags)
 {
-    EcsSystemsAdminHandles *handles = handles_out;
-
     /* Import HTTP components */
-    ECS_IMPORT(world, EcsComponentsHttp, 0);
+    ECS_IMPORT(world, FlecsComponentsHttp, 0);
+
+    ECS_MODULE(world, FlecsSystemsAdmin);
 
     /* Register EcsAdmin components */
     ECS_COMPONENT(world, EcsAdmin);
@@ -569,7 +568,7 @@ void EcsSystemsAdmin(
     ECS_COMPONENT(world, EcsAdminCtx);
 
     /* Start admin server when an EcsAdmin component has been initialized */
-    ECS_SYSTEM(world, EcsAdminStart, EcsOnSet, EcsAdmin, ID.EcsAdminMeasurement, $EcsComponentsHttp, SYSTEM.EcsHidden);
+    ECS_SYSTEM(world, EcsAdminStart, EcsOnSet, EcsAdmin, ID.EcsAdminMeasurement, $FlecsComponentsHttp, SYSTEM.EcsHidden);
     ECS_SYSTEM(world, EcsAdminCollectData, EcsOnStore, EcsAdminMeasurement, SYSTEM.EcsHidden);
     ECS_SYSTEM(world, EcsAdminMeasurementDeinit, EcsOnRemove, EcsAdminMeasurement, SYSTEM.EcsHidden);
 
