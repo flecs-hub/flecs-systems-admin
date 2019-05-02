@@ -255,6 +255,8 @@ bool RequestWorld(
         ecs_type_t TEcsAdminMeasurement = (ecs_type_t)(uintptr_t)endpoint->ctx;
         EcsAdminMeasurement *stats = ecs_get_ptr(world, entity, EcsAdminMeasurement);
 
+        ecs_os_dbg("admin: world data requested");
+
         char *stats_json = NULL;
         ecs_os_mutex_lock(stats->lock);
 
@@ -307,8 +309,10 @@ bool RequestSystems(
 
     if (request->method == EcsHttpPost) {
         if (!strcmp(request->params, "enabled=false")) {
+            ecs_os_dbg("admin: disable system %s", ecs_get_id(world, system));
             ecs_enable(world, system, false);
         } else if (!strcmp(request->params, "enabled=true")) {
+            ecs_os_dbg("admin: enable system %s", ecs_get_id(world, system));
             ecs_enable(world, system, true);
         }
     }
@@ -499,6 +503,8 @@ void EcsAdminStart(ecs_rows_t *rows) {
 		ecs_os_mutex_t stats_lock = ecs_os_mutex_new();
 
         ecs_entity_t server = rows->entities[i];
+
+        ecs_os_dbg("admin: starting server on port %u", admin[i].port);
 
         ecs_set(world, server, EcsHttpServer, {.port = admin[i].port});
           ecs_entity_t e_world = ecs_new_child(world, server, 0);
