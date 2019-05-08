@@ -654,6 +654,14 @@ Vue.component('app-performance-system-table', {
               :frame="world.frame.current * world.fps.current"
               v-on:refresh="$emit('refresh', $event)">
             </app-performance-system-row>
+            <app-performance-system-row
+              v-for="system in world.systems.on_demand"
+              :world="world"
+              :key="system.id"
+              :system="system"
+              :frame="world.frame.current * world.fps.current"
+              v-on:refresh="$emit('refresh', $event)">
+            </app-performance-system-row>
           </tbody>
         </table>
       </div>

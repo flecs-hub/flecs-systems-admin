@@ -22,6 +22,7 @@ typedef struct EcsAdminMeasurement {
     Measurement frame;
     Measurement system;
     ecs_map_t *system_measurements;
+    ecs_map_t *component_measurements;
     uint32_t tick;
     char *stats_json;
     ecs_os_mutex_t lock;
@@ -68,6 +69,44 @@ void AddMeasurementToJson(
     AddRingBufToJson(buf, "min_1h", measurement->min_1h);
     AddRingBufToJson(buf, "max_1h", measurement->max_1h);
     ut_strbuf_appendstr(buf, "}");
+}
+
+/* Add measurement to JSON */
+static
+void AddComponentsToJson(
+    ut_strbuf *buf,
+    ecs_world_stats_t *world_stats,
+    EcsAdminMeasurement *data)
+{
+    uint32_t i, count = ecs_vector_count(world_stats->components);
+    if (count) {
+        ut_strbuf_append(buf, "\"components\":[");
+        EcsComponentStats *stats = ecs_vector_first(world_stats->components);
+
+        for (i = 0; i < count; i ++) {
+            if (i) {
+                ut_strbuf_appendstr(buf, ",");
+            }
+
+            ut_strbuf_append(buf,
+                "{\"handle\":%d,\"id\":\"%s\",\"entities\":%u,\"tables\":%u",
+                (uint32_t)stats[i].handle,
+                stats[i].id,
+                stats[i].entities,
+                stats[i].tables);
+
+            ecs_ringbuf_t *values = ecs_map_get(
+                data->component_measurements,
+                stats[i].handle);
+
+            if (values) {
+                AddRingBufToJson(buf, "mem_used_1m", values);
+            }
+
+            ut_strbuf_appendstr(buf, "}");
+        }
+        ut_strbuf_appendstr(buf, "]");
+    }
 }
 
 /* Add a system to JSON string */
@@ -165,11 +204,11 @@ char* JsonFromStats(
     ut_strbuf body = UT_STRBUF_INIT;
 
     ut_strbuf_append(&body,
-        "{\"system_count\":%u,"\
+        "{\"system_count\":%u,\"component_count\":%u,"\
         "\"table_count\":%u,\"entity_count\":%u,\"thread_count\":%u"
         ",\"frame_profiling\":%s,\"system_profiling\":%s",
-        stats->system_count, stats->table_count, stats->entity_count,
-        stats->thread_count,
+        stats->system_count, stats->component_count, stats->table_count, 
+        stats->entity_count, stats->thread_count,
         stats->frame_profiling ? "true" : "false",
         stats->system_profiling ? "true" : "false");
 
@@ -181,7 +220,7 @@ char* JsonFromStats(
         "\"families\":{\"allocd\":%u,\"used\":%u},"\
         "\"tables\":{\"allocd\":%u,\"used\":%u},"\
         "\"stage\":{\"allocd\":%u,\"used\":%u},"\
-        "\"world\":{\"allocd\":%u,\"used\":%u}}",
+        "\"world\":{\"allocd\":%u,\"used\":%u}},",
         stats->memory.total.allocd, stats->memory.total.used,
         stats->memory.components.allocd, stats->memory.components.used,
         stats->memory.entities.allocd, stats->memory.entities.used,
@@ -191,32 +230,10 @@ char* JsonFromStats(
         stats->memory.stage.allocd, stats->memory.stage.used,
         stats->memory.world.allocd, stats->memory.world.used);
 
-    ut_strbuf_appendstr(&body, ",\"tables\":[");
-    if (ecs_vector_count(stats->tables)) {
-        EcsTableStats *tables = ecs_vector_first(stats->tables);
-        uint32_t i = 0, count = ecs_vector_count(stats->tables);
-        for (i = 0; i < count; i ++) {
-            EcsTableStats *table = &tables[i];
-            if (i) {
-                ut_strbuf_append(&body, ",");
-            }
-
-            if (table->id) {
-                ut_strbuf_append(&body, "{\"id\":\"%s\",", table->id);
-            } else {
-                ut_strbuf_append(&body, "{");
-            }
-
-            ut_strbuf_append(&body,
-              "\"columns\":\"%s\",\"row_count\":%u,"
-              "\"memory_used\":%u,\"memory_allocd\":%u}",
-              table->columns, table->row_count, table->memory_used,
-              table->memory_allocd);
-        }
-    }
+    AddComponentsToJson(&body, stats, measurements);
 
     bool set = false;
-    ut_strbuf_appendstr(&body, "],\"systems\":{");
+    ut_strbuf_appendstr(&body, ",\"systems\":{");
     AddSystemsToJson(&body, stats->on_load_systems, "on_load", &set, measurements);
     AddSystemsToJson(&body, stats->post_load_systems, "post_load", &set, measurements);
     AddSystemsToJson(&body, stats->pre_update_systems, "pre_update", &set, measurements);
@@ -402,8 +419,6 @@ void AddSystemMeasurement(
     uint32_t i, count = ecs_vector_count(systems);
     EcsSystemStats *buffer = ecs_vector_first(systems);
 
-    float total = 0;
-
     if (!data->system_measurements) {
         data->system_measurements = ecs_map_new(count);
     }
@@ -421,8 +436,36 @@ void AddSystemMeasurement(
 
         double *value = ecs_ringbuf_push(buf, &double_params);
         *value = (system->time_spent / stats->system_time) * 100;
+    }
+}
 
-        total += *value;
+/* Utility to keep track of history for component memory usage */
+static
+void AddComponentMeasurements(
+    EcsAdminMeasurement *data,
+    ecs_world_stats_t *stats)
+{
+    uint32_t i, count = ecs_vector_count(stats->components);
+    EcsComponentStats *buffer = ecs_vector_first(stats->components);
+
+    if (!data->component_measurements) {
+        data->component_measurements = ecs_map_new(stats->component_count);
+    }
+
+    for (i = 0; i < count; i ++) {
+        ecs_ringbuf_t *buf;
+        EcsComponentStats *component = &buffer[i];
+        uint64_t buf64 = 0;
+
+        if (!ecs_map_has(data->component_measurements, component->handle, &buf64)) {
+            buf = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT);
+            ecs_map_set(data->component_measurements, component->handle, buf);
+        } else {
+            buf = (ecs_ringbuf_t*)(uintptr_t)buf64;
+        }
+
+        double *value = ecs_ringbuf_push(buf, &double_params);
+        *value = component->memory_used;
     }
 }
 
@@ -462,6 +505,8 @@ void EcsAdminCollectData(ecs_rows_t *rows) {
         AddSystemMeasurement(&data[i], &stats, stats.pre_store_systems, fps);
         AddSystemMeasurement(&data[i], &stats, stats.on_store_systems, fps);
         AddSystemMeasurement(&data[i], &stats, stats.on_demand_systems, fps);
+
+        AddComponentMeasurements(&data[i], &stats);
 
         char *json = JsonFromStats(rows->world, &stats, &data[i]);
 

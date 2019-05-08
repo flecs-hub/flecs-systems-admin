@@ -183,6 +183,14 @@ div.app-graph {
   height: 100%;
 }
 
+div.app-graph-fixed {
+  border-radius: 5px;
+  border: 1px solid #202027;
+  padding-left: 5px;
+  padding-right: 5px;
+  height: 450px;
+}
+
 div.app-table {
   border-radius: 5px;
   padding-bottom: 0px;

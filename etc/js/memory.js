@@ -1,5 +1,8 @@
 
 var app_mem = {
+  toKB: function(num) {
+    return (num / 1000).toFixed(2) + "KB";
+  },
   categories_chart: {
     type: 'bar',
     data: {
@@ -64,7 +67,7 @@ var app_mem = {
           ticks: {
             // Include a dollar sign in the ticks
             callback: function(value, index, values) {
-              return (value / 1000) + "KB";
+              return app_mem.toKB(value);
             }
           }
         }]
@@ -104,6 +107,52 @@ var app_mem = {
       maintainAspectRatio: false
     }
   },
+
+  comp_1min_chart: {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        {
+          data: [],
+          borderColor: [ '#5BE595' ],
+          borderWidth: 2,
+          pointRadius: 0
+        }
+      ]
+    },
+    options: {
+      title: {
+        text: "Components (1m)",
+        position: "top",
+        display: true
+      },
+      legend: {
+        position: "right"
+      },
+      responsive: true,
+      maintainAspectRatio: false,
+      lineTension: 1,
+      scales: {
+        yAxes: [{
+          id: 'y_fps',
+          stacked: true,
+          ticks: {
+            beginAtZero: true,
+            padding: 25,
+            callback: function(value, index, values) {
+                return app_mem.toKB(value);
+            }
+          }
+        }],
+        xAxes: [{
+          ticks: {
+            maxTicksLimit: 20
+          }
+        }]
+      }
+    }
+  }
 }
 
 Vue.component('app-mem-total-graph', {
@@ -218,9 +267,6 @@ Vue.component('app-mem-table-row', {
         return ""
       }
     },
-    toKB(num) {
-      return (num / 1000).toFixed(2) + "KB";
-    },
     tableColumns() {
       return shortenText(this.table.columns);
     }
@@ -238,30 +284,107 @@ Vue.component('app-mem-table-row', {
   </tr>`
 });
 
-Vue.component('app-mem-tables', {
+Vue.component('app-mem-comp-table', {
   props: ['world'],
+  methods: {
+    toKB(num) {
+      return (num / 1000).toFixed(2) + "KB";
+    },
+    last_measurement(component) {
+      return component.mem_used_1m[component.mem_used_1m.length - 1];
+    }
+  },
   template: `
     <div class="app-table">
-      <div class="app-table-top">
-        <h2>Tables</h2>
-      </div>
+    <div class="app-table-top">
+      <h2>components</h2>
+    </div>    
       <div class="app-noscroll-table-content">
         <table>
           <thead>
             <tr>
-              <th>type id</th>
-              <th>components</th>
+              <th>id</th>
+              <th>in use</th>
               <th>entities</th>
-              <th>memory used</th>
-              <th>memory allocated</th>
+              <th>tables</th>
             </tr>
           </thead>
           <tbody>
-            <app-mem-table-row v-for="table in world.tables" :key="table.columns" :table="table">
-            </app-mem-table-row>
+            <tr v-for="component in world.components">
+            <td>{{component.id}}</td>
+            <td>{{toKB(last_measurement(component))}}</td>
+            <td>{{component.entities}}</td>
+            <td>{{component.tables}}</td>
+            </tr>
           </tbody>
         </table>
       </div>
+    </div>`
+})
+
+Vue.component('app-mem-comp-graph', {
+  props: ['world'],
+  mounted() {
+    this.createChart();
+  },
+  updated() {
+    this.updateChart();
+  },
+  data: function() {
+    return {
+      chart: {}
+    }
+  },  
+  methods: {
+    setValues() {
+      var labels = [];
+      var components = this.world.components;
+
+      var length = this.world.components[0].mem_used_1m.length;
+      for (var i = 0; i < length; i ++) {
+          labels.push((length  - i) + "s");
+      }
+
+      app_mem.comp_1min_chart.data.labels = labels;
+
+      var dataset = 0;
+      for (var i = 0; i < components.length; i ++) {
+          var component = components[i];
+
+          if (!app_mem.comp_1min_chart.data.datasets[dataset]) {
+            app_mem.comp_1min_chart.data.datasets[dataset] = {
+              borderWidth: 0.5,
+              pointRadius: 0
+            }
+          }
+
+          app_mem.comp_1min_chart.data.datasets[dataset].label = component.id;
+          app_mem.comp_1min_chart.data.datasets[dataset].data = component.mem_used_1m;
+          app_mem.comp_1min_chart.data.datasets[dataset].borderColor = "#000";
+          app_mem.comp_1min_chart.data.datasets[dataset].backgroundColor = colors[dataset % colors.length];
+
+          dataset ++;
+      }
+
+      app_mem.comp_1min_chart.data.datasets.length = dataset;
+    },
+    createChart() {
+      const ctx = document.getElementById('comp-1min-graph');
+      this.setValues();
+      this.chart = new Chart(ctx, {
+        type: app_mem.comp_1min_chart.type,
+        data: app_mem.comp_1min_chart.data,
+        options: app_mem.comp_1min_chart.options
+      });
+    },
+    updateChart() {
+      this.setValues();
+      this.chart.update(0);
+    }
+  },
+  template: `
+    <div class="app-graph-fixed">
+      <canvas id="comp-1min-graph" :data-fps="world.tick"></canvas>
     </div>`
 });
 
@@ -336,8 +459,12 @@ Vue.component('app-memory', {
         </div>
       </div>
       <div class="app-row">
-        <app-mem-tables :world="world">
-        </app-mem-tables>
+        <app-mem-comp-graph :world="world">
+        </app-mem-comp-graph>
+      </div>      
+      <div class="app-row">
+        <app-mem-comp-table :world="world">
+        </app-mem-comp-table>
       </div>
     </div>`
 });
