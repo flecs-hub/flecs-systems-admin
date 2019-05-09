@@ -21,7 +21,6 @@ var colors = [
     "#273C7F",
     "#3C3366",
     "#482967",
-
 ];
 
 Vue.component('app-menu', {

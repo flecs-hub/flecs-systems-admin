@@ -336,6 +336,16 @@ Vue.component('app-mem-comp-graph', {
     }
   },  
   methods: {
+    avgMem(component) {
+      var length = component.mem_used_1m.length;
+      var result = 0;
+
+      for (var i = 0; i < length; i ++) {
+        result += component.mem_used_1m[i];
+      }
+
+      return result / length;
+    },
     setValues() {
       var labels = [];
       var components = this.world.components;
@@ -350,6 +360,11 @@ Vue.component('app-mem-comp-graph', {
       var dataset = 0;
       for (var i = 0; i < components.length; i ++) {
           var component = components[i];
+
+          // Skip if lower than a percent
+          if (this.avgMem(component) < (this.world.memory.total.used / 100)) {
+            continue;
+          }
 
           if (!app_mem.comp_1min_chart.data.datasets[dataset]) {
             app_mem.comp_1min_chart.data.datasets[dataset] = {
