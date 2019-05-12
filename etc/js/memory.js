@@ -294,6 +294,14 @@ Vue.component('app-mem-comp-table', {
       return component.mem_used_1m[component.mem_used_1m.length - 1];
     }
   },
+  computed: {
+    sorted_components: function() {
+      var arr = this.world.components.slice();
+      return arr.sort((el1, el2) => {
+        return this.last_measurement(el2) - this.last_measurement(el1);
+      });
+    }
+  },
   template: `
     <div class="app-table">
     <div class="app-table-top">
@@ -310,7 +318,7 @@ Vue.component('app-mem-comp-table', {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="component in world.components">
+            <tr v-for="component in sorted_components">
             <td>{{component.id}}</td>
             <td>{{toKB(last_measurement(component))}}</td>
             <td>{{component.entities}}</td>
