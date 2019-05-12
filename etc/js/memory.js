@@ -357,14 +357,9 @@ Vue.component('app-mem-comp-graph', {
 
       app_mem.comp_1min_chart.data.labels = labels;
 
-      var dataset = 0;
+      var dataset = 1;
       for (var i = 0; i < components.length; i ++) {
           var component = components[i];
-
-          // Skip if lower than a percent
-          if (this.avgMem(component) < (this.world.memory.total.used / 100)) {
-            continue;
-          }
 
           if (!app_mem.comp_1min_chart.data.datasets[dataset]) {
             app_mem.comp_1min_chart.data.datasets[dataset] = {
@@ -373,12 +368,19 @@ Vue.component('app-mem-comp-graph', {
             }
           }
 
-          app_mem.comp_1min_chart.data.datasets[dataset].label = component.id;
-          app_mem.comp_1min_chart.data.datasets[dataset].data = component.mem_used_1m;
-          app_mem.comp_1min_chart.data.datasets[dataset].borderColor = "#000";
-          app_mem.comp_1min_chart.data.datasets[dataset].backgroundColor = colors[dataset % colors.length];
+          if (this.avgMem(component) < (this.world.memory.total.used / 100)) {
+            app_mem.comp_1min_chart.data.datasets[0].label = "Other";
+            app_mem.comp_1min_chart.data.datasets[0].data = component.mem_used_1m;
+            app_mem.comp_1min_chart.data.datasets[0].borderColor = "#000";
+            app_mem.comp_1min_chart.data.datasets[0].backgroundColor = colors[0];
+          } else {
+            app_mem.comp_1min_chart.data.datasets[dataset].label = component.id;
+            app_mem.comp_1min_chart.data.datasets[dataset].data = component.mem_used_1m;
+            app_mem.comp_1min_chart.data.datasets[dataset].borderColor = "#000";
+            app_mem.comp_1min_chart.data.datasets[dataset].backgroundColor = colors[dataset % colors.length];
+            dataset ++;
+          }
 
-          dataset ++;
       }
 
       app_mem.comp_1min_chart.data.datasets.length = dataset;
