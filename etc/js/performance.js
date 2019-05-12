@@ -504,12 +504,12 @@ Vue.component('app-performance-sys-graph', {
     </div>`
 });
 
-Vue.component('app-performance-system-row', {
-  props: ['world', 'system', 'kind', 'frame'],
+Vue.component('app-performance-system-table', {
+  props: ['world'],
   methods: {
-    enabledColor() {
-      if (this.system.enabled) {
-        if (this.system.active) {
+    enabledColor(system) {
+      if (system.enabled) {
+        if (system.active) {
           return "#5BE595";
         } else {
           return "orange";
@@ -525,55 +525,26 @@ Vue.component('app-performance-system-row', {
         return "enable";
       }
     },
-    statusText() {
-      if (this.system.enabled) {
-        if (this.system.active) {
-          return "active";
-        } else {
-          return "inactive";
-        }
-      } else {
-        return "disabled";
-      }
-    },
     timeSpent(time) {
       return time.toFixed(2);
     }
   },
-  template: `
-    <tr>
-      <td>
-        <svg height="10" width="10">
-          <circle cx="5" cy="5" r="4" stroke-width="0" :fill="enabledColor()"/>
-        </svg>
-        &nbsp;{{system.id}}
-      </td>
-      <td>
-        <div v-if="system.period != 0">
-          {{system.period.toFixed(2)}}s
-        </div>
-        <div v-else>
-          *
-        </div>
-      </td>
-      <td>
-        {{system.time_spent.toFixed(2)}}%
-      </td>
-      <td>
-        <app-systems-warning :is_hidden="system.is_hidden">
-        </app-systems-warning>
-        <app-toggle
-          :text="buttonText(system.enabled)"
-          :enabled="system.enabled"
-          :link="'systems/' + system.id"
-          v-on:refresh="$emit('refresh', $event)">
-        </app-toggle>
-      </td>
-    </tr>`
-});
-
-Vue.component('app-performance-system-table', {
-  props: ['world'],
+  computed: {
+    sorted_systems: function() {
+      var arr = [
+        ...this.world.systems.on_load,
+        ...this.world.systems.post_load,
+        ...this.world.systems.pre_update,
+        ...this.world.systems.on_update,
+        ...this.world.systems.on_validate,
+        ...this.world.systems.post_update,
+        ...this.world.systems.pre_store,
+        ...this.world.systems.on_store
+      ];
+          
+      return arr.sort((el1, el2) => el2.time_spent - el1.time_spent);
+    }
+  },
   template: `
     <div class="app-table">
       <div class="app-table-top">
@@ -590,78 +561,35 @@ Vue.component('app-performance-system-table', {
             </tr>
           </thead>
           <tbody>
-            <app-performance-system-row
-              v-for="system in world.systems.on_load"
-              :world="world"
-              :key="system.id"
-              :system="system"
-              :frame="world.frame.current * world.fps.current"
-              v-on:refresh="$emit('refresh', $event)">
-            </app-performance-system-row>
-            <app-performance-system-row
-              v-for="system in world.systems.post_load"
-              :world="world"
-              :key="system.id"
-              :system="system"
-              :frame="world.frame.current * world.fps.current"
-              v-on:refresh="$emit('refresh', $event)">
-            </app-performance-system-row>            
-            <app-performance-system-row
-              v-for="system in world.systems.pre_update"
-              :world="world"
-              :key="system.id"
-              :system="system"
-              :frame="world.frame.current * world.fps.current"
-              v-on:refresh="$emit('refresh', $event)">
-            </app-performance-system-row>
-            <app-performance-system-row
-              v-for="system in world.systems.on_update"
-              :world="world"
-              :key="system.id"
-              :system="system"
-              :frame="world.frame.current * world.fps.current"
-              v-on:refresh="$emit('refresh', $event)">
-            </app-performance-system-row>
-            <app-performance-system-row
-              v-for="system in world.systems.on_validate"
-              :world="world"
-              :key="system.id"
-              :system="system"
-              :frame="world.frame.current * world.fps.current"
-              v-on:refresh="$emit('refresh', $event)">
-            </app-performance-system-row>            
-            <app-performance-system-row
-              v-for="system in world.systems.post_update"
-              :world="world"
-              :key="system.id"
-              :system="system"
-              :frame="world.frame.current * world.fps.current"
-              v-on:refresh="$emit('refresh', $event)">
-            </app-performance-system-row>
-            <app-performance-system-row
-              v-for="system in world.systems.pre_store"
-              :world="world"
-              :key="system.id"
-              :system="system"
-              :frame="world.frame.current * world.fps.current"
-              v-on:refresh="$emit('refresh', $event)">
-            </app-performance-system-row>
-            <app-performance-system-row
-              v-for="system in world.systems.on_store"
-              :world="world"
-              :key="system.id"
-              :system="system"
-              :frame="world.frame.current * world.fps.current"
-              v-on:refresh="$emit('refresh', $event)">
-            </app-performance-system-row>
-            <app-performance-system-row
-              v-for="system in world.systems.on_demand"
-              :world="world"
-              :key="system.id"
-              :system="system"
-              :frame="world.frame.current * world.fps.current"
-              v-on:refresh="$emit('refresh', $event)">
-            </app-performance-system-row>
+            <tr v-for="system in sorted_systems">
+              <td>
+                <svg height="10" width="10">
+                  <circle cx="5" cy="5" r="4" stroke-width="0" :fill="enabledColor(system)"/>
+                </svg>
+                &nbsp;{{system.id}}
+              </td>
+              <td>
+                <div v-if="system.period != 0">
+                  {{system.period.toFixed(2)}}s
+                </div>
+                <div v-else>
+                  *
+                </div>
+              </td>
+              <td>
+                {{system.time_spent.toFixed(2)}}%
+              </td>
+              <td>
+                <app-systems-warning :is_hidden="system.is_hidden">
+                </app-systems-warning>
+                <app-toggle
+                  :text="buttonText(system.enabled)"
+                  :enabled="system.enabled"
+                  :link="'systems/' + system.id"
+                  v-on:refresh="$emit('refresh', $event)">
+                </app-toggle>
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>

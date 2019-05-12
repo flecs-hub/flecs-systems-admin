@@ -115,54 +115,46 @@ void AddSystemsToJson(
     ut_strbuf *buf,
     ecs_vector_t *systems,
     const char *json_member,
-    bool *set,
     EcsAdminMeasurement *data)
 {
+    double fps = data->fps.current;
+    double frame_time = data->frame.current * 1.0 / fps;
+
+    ut_strbuf_append(buf, "\"%s\":[", json_member);
+
     uint32_t i, count = ecs_vector_count(systems);
-    if (count) {
-        if (*set) {
+    EcsSystemStats *stats = ecs_vector_first(systems);
+    for (i = 0; i < count; i ++) {
+        if (i) {
             ut_strbuf_appendstr(buf, ",");
         }
+        ut_strbuf_append(buf,
+            "{\"handle\":%d,\"id\":\"%s\",\"enabled\":%s,\"active\":%s,"\
+            "\"tables_matched\":%u,\"entities_matched\":%u,"\
+            "\"signature\":\"%s\",\"is_hidden\":%s,\"period\":%f,"
+            "\"time_spent\":%f",
+            (uint32_t)stats[i].handle,
+            stats[i].id,
+            stats[i].enabled ? "true" : "false",
+            stats[i].active ? "true" : "false",
+            stats[i].tables_matched,
+            stats[i].entities_matched,
+            stats[i].signature,
+            stats[i].is_hidden ? "true" : "false",
+            stats[i].period,
+            (stats[i].time_spent / (frame_time * fps)) * 100 * 100);
 
-        *set = true;
+        ecs_ringbuf_t *values = ecs_map_get(
+            data->system_measurements,
+            stats[i].handle);
 
-        double fps = data->fps.current;
-        double frame_time = data->frame.current * 1.0 / fps;
-
-        ut_strbuf_append(buf, "\"%s\":[", json_member);
-        EcsSystemStats *stats = ecs_vector_first(systems);
-        for (i = 0; i < count; i ++) {
-            if (i) {
-                ut_strbuf_appendstr(buf, ",");
-            }
-            ut_strbuf_append(buf,
-                "{\"handle\":%d,\"id\":\"%s\",\"enabled\":%s,\"active\":%s,"\
-                "\"tables_matched\":%u,\"entities_matched\":%u,"\
-                "\"signature\":\"%s\",\"is_hidden\":%s,\"period\":%f,"
-                "\"time_spent\":%f",
-                (uint32_t)stats[i].handle,
-                stats[i].id,
-                stats[i].enabled ? "true" : "false",
-                stats[i].active ? "true" : "false",
-                stats[i].tables_matched,
-                stats[i].entities_matched,
-                stats[i].signature,
-                stats[i].is_hidden ? "true" : "false",
-                stats[i].period,
-                (stats[i].time_spent / (frame_time * fps)) * 100 * 100);
-
-            ecs_ringbuf_t *values = ecs_map_get(
-                data->system_measurements,
-                stats[i].handle);
-
-            if (values) {
-                AddRingBufToJson(buf, "time_spent_1m", values);
-            }
-
-            ut_strbuf_appendstr(buf, "}");
+        if (values) {
+            AddRingBufToJson(buf, "time_spent_1m", values);
         }
-        ut_strbuf_appendstr(buf, "]");
+
+        ut_strbuf_appendstr(buf, "}");
     }
+    ut_strbuf_appendstr(buf, "]");
 }
 
 /* Add a feature to JSON string */
@@ -232,20 +224,30 @@ char* JsonFromStats(
 
     AddComponentsToJson(&body, stats, measurements);
 
-    bool set = false;
     ut_strbuf_appendstr(&body, ",\"systems\":{");
-    AddSystemsToJson(&body, stats->on_load_systems, "on_load", &set, measurements);
-    AddSystemsToJson(&body, stats->post_load_systems, "post_load", &set, measurements);
-    AddSystemsToJson(&body, stats->pre_update_systems, "pre_update", &set, measurements);
-    AddSystemsToJson(&body, stats->on_update_systems, "on_update", &set, measurements);
-    AddSystemsToJson(&body, stats->on_validate_systems, "on_validate", &set, measurements);
-    AddSystemsToJson(&body, stats->post_update_systems, "post_update", &set, measurements);
-    AddSystemsToJson(&body, stats->pre_store_systems, "pre_store", &set, measurements);
-    AddSystemsToJson(&body, stats->on_store_systems, "on_store", &set, measurements);
-    AddSystemsToJson(&body, stats->on_demand_systems, "on_demand", &set, measurements);
-    AddSystemsToJson(&body, stats->on_add_systems, "on_add", &set, measurements);
-    AddSystemsToJson(&body, stats->on_set_systems, "on_set", &set, measurements);
-    AddSystemsToJson(&body, stats->on_remove_systems, "on_remove", &set, measurements);
+    AddSystemsToJson(&body, stats->on_load_systems, "on_load", measurements);
+    ut_strbuf_appendstr(&body, ", ");
+    AddSystemsToJson(&body, stats->post_load_systems, "post_load", measurements);
+    ut_strbuf_appendstr(&body, ", ");
+    AddSystemsToJson(&body, stats->pre_update_systems, "pre_update", measurements);
+    ut_strbuf_appendstr(&body, ", ");
+    AddSystemsToJson(&body, stats->on_update_systems, "on_update", measurements);
+    ut_strbuf_appendstr(&body, ", ");
+    AddSystemsToJson(&body, stats->on_validate_systems, "on_validate", measurements);
+    ut_strbuf_appendstr(&body, ", ");
+    AddSystemsToJson(&body, stats->post_update_systems, "post_update", measurements);
+    ut_strbuf_appendstr(&body, ", ");
+    AddSystemsToJson(&body, stats->pre_store_systems, "pre_store", measurements);
+    ut_strbuf_appendstr(&body, ", ");
+    AddSystemsToJson(&body, stats->on_store_systems, "on_store", measurements);
+    ut_strbuf_appendstr(&body, ", ");
+    AddSystemsToJson(&body, stats->on_demand_systems, "on_demand", measurements);
+    ut_strbuf_appendstr(&body, ", ");
+    AddSystemsToJson(&body, stats->on_add_systems, "on_add", measurements);
+    ut_strbuf_appendstr(&body, ", ");
+    AddSystemsToJson(&body, stats->on_set_systems, "on_set", measurements);
+    ut_strbuf_appendstr(&body, ", ");
+    AddSystemsToJson(&body, stats->on_remove_systems, "on_remove", measurements);
     ut_strbuf_appendstr(&body, "}");
 
     AddFeaturesToJson(&body, stats->features);
