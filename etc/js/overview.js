@@ -267,10 +267,19 @@ Vue.component('app-overview-mem-graph', {
 });
 
 Vue.component('app-toggle', {
-  props: ['text', 'enabled', 'link'],
+  props: ['enabled', 'link'],
   data: function() {
     return {
-      in_progress: false
+      in_progress: false,
+      button_state: false
+    }
+  },
+  mounted() {
+    this.button_state = this.enabled;
+  },
+  updated() {
+    if (!this.in_progress) {
+      this.button_state = this.enabled;
     }
   },
   methods: {
@@ -278,11 +287,14 @@ Vue.component('app-toggle', {
       this.in_progress = true;
     },
     clicked() {
+      this.button_state = !this.button_state;
+
       const Http = new XMLHttpRequest();
-      const url = "http://" + host + "/" + this.link;
+      const url = "http://" + host + "/" + this.link + "?enabled=" + this.button_state;
       Http.open("POST", url);
       Http.send();
-      Http.onreadystatechange = (e)=>{
+     
+      Http.onreadystatechange = (e) => {
         if (Http.readyState == 4) {
           this.in_progress = false;
         }
@@ -290,23 +302,35 @@ Vue.component('app-toggle', {
     },
     cssClass() {
       var cl = "";
-      if (this.enabled) {
-        cl = "app-toggle-true";
+      if (this.button_state != this.enabled) {
+        cl = "app-toggle-out-of-sync"
       } else {
-        cl = "app-toggle-false";
+        if (this.button_state) {
+          cl = "app-toggle-true";
+        } else {
+          cl = "app-toggle-false";
+        }
+        if (this.in_progress) {
+          cl += " app-toggle-in-progress";
+        }
       }
-      if (this.in_progress) {
-        cl += " app-toggle-in-progress";
-      }
+
       return cl;
+    },
+    text() {
+      if (this.button_state) {
+        return "enabled"
+      } else {
+        return "disabled"
+      }
     }
   },
   template: `
-  <div :class="'app-toggle ' + cssClass()"
-    v-on:click="clicked()"
-    v-on:mousedown="mousedown()">
-    {{text}}
-  </div>`
+    <div :class="'app-toggle ' + cssClass()"
+      v-on:click="clicked()"
+      v-on:mousedown="mousedown()">
+      {{text()}}
+    </div>`
 });
 
 Vue.component('app-system-row', {
@@ -357,7 +381,7 @@ Vue.component('app-system-row', {
         <app-toggle
           :text="buttonText(system.enabled)"
           :enabled="system.enabled"
-          :link="'systems/' + system.id + '?enabled=' + !system.enabled"
+          :link="'systems/' + system.id"
           v-on:refresh="$emit('refresh', $event)">
         </app-toggle>
       </td>
@@ -476,7 +500,7 @@ Vue.component('app-feature-row', {
         <app-toggle
           :text="buttonText(this.feature.systems_enabled != 0)"
           :enabled="this.feature.systems_enabled != 0"
-          :link="'systems/' + feature.id + '?enabled=' + (this.feature.systems_enabled == 0)"
+          :link="'systems/' + feature.id"
           v-on:refresh="$emit('refresh', $event)">
         </app-toggle>
       </td>

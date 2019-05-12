@@ -359,6 +359,10 @@ div.app-toggle-false {
   border: 1px solid #202027;
 }
 
+div.app-toggle-out-of-sync {
+  border: 1px solid orange;
+}
+
 div.app-toggle:hover {
   color: #fff;
 }

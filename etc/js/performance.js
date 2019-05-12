@@ -565,7 +565,7 @@ Vue.component('app-performance-system-row', {
         <app-toggle
           :text="buttonText(system.enabled)"
           :enabled="system.enabled"
-          :link="'systems/' + system.id + '?enabled=' + !system.enabled"
+          :link="'systems/' + system.id"
           v-on:refresh="$emit('refresh', $event)">
         </app-toggle>
       </td>

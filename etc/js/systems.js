@@ -118,7 +118,7 @@ Vue.component('app-systems-system-row', {
         <app-toggle
           :text="buttonText(system.enabled)"
           :enabled="system.enabled"
-          :link="'systems/' + system.id + '?enabled=' + !system.enabled"
+          :link="'systems/' + system.id"
           v-on:refresh="$emit('refresh', $event)">
         </app-toggle>
       </td>
@@ -136,7 +136,7 @@ Vue.component('app-systems-system-table', {
         <table class="last_align_right">
           <thead>
             <tr>
-              <th>id</th>
+              <th width="400px">id</th>
               <th>entities</th>
               <th>period</th>
               <th></th>
@@ -166,7 +166,7 @@ Vue.component('app-systems-reactive-system-table', {
         <table>
           <thead>
             <tr>
-              <th>id</th>
+              <th width="400px">id</th>
               <th></th>
               <th>kind</th>
             </tr>
@@ -241,7 +241,7 @@ Vue.component('app-systems-feature-row', {
         <app-toggle
           :text="buttonText(this.feature.systems_enabled != 0)"
           :enabled="this.feature.systems_enabled != 0"
-          :link="'systems/' + feature.id + '?enabled=' + (this.feature.systems_enabled == 0)"
+          :link="'systems/' + feature.id"
           v-on:refresh="$emit('refresh', $event)">
         </app-toggle>
       </td>
@@ -259,7 +259,7 @@ Vue.component('app-systems-features', {
         <table class="last_align_right">
           <thead>
             <tr>
-              <th>id</th>
+              <th width="400px">id</th>
               <th>enabled</th>
               <th></th>
             </tr>
