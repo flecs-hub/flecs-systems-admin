@@ -20,22 +20,20 @@
 /* Generated includes are specific to the bake environment. If a project is not
  * built with bake, it will have to provide alternative methods for including
  * its dependencies. */
-#ifdef __BAKE__
 /* Headers of public dependencies */
-#include <flecs>
-#include <flecs.util>
-#include <flecs.components.http>
-#include <bake.util>
+#include <flecs.h>
+#include <flecs_util.h>
+#include <flecs_components_http.h>
+#include <bake_util.h>
 
 /* Headers of private dependencies */
 #ifdef FLECS_SYSTEMS_ADMIN_IMPL
 /* No dependencies */
 #endif
-#endif
 
 /* Convenience macro for exporting symbols */
 #ifndef FLECS_SYSTEMS_ADMIN_STATIC
-  #if FLECS_SYSTEMS_ADMIN_IMPL && defined _MSC_VER
+  #if FLECS_SYSTEMS_ADMIN_IMPL && (defined(_MSC_VER) || defined(__MINGW32__))
     #define FLECS_SYSTEMS_ADMIN_EXPORT __declspec(dllexport)
   #elif FLECS_SYSTEMS_ADMIN_IMPL
     #define FLECS_SYSTEMS_ADMIN_EXPORT __attribute__((__visibility__("default")))

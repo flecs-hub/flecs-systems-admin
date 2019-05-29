@@ -1,7 +1,7 @@
 #ifndef FLECS_SYSTEMS_ADMIN_H
 #define FLECS_SYSTEMS_ADMIN_H
 
-#include "bake_config.h"
+#include <flecs-systems-admin/bake_config.h>
 
 #ifdef __cplusplus
 extern "C" {
