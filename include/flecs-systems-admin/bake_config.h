@@ -24,7 +24,9 @@
 #include <flecs.h>
 #include <flecs_util.h>
 #include <flecs_components_http.h>
+#ifdef __BAKE__
 #include <bake_util.h>
+#endif
 
 /* Headers of private dependencies */
 #ifdef FLECS_SYSTEMS_ADMIN_IMPL
