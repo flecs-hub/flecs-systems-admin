@@ -95,11 +95,9 @@ void AddComponentsToJson(
                 stats[i].entities,
                 stats[i].tables);
 
-            ecs_ringbuf_t *values = ecs_map_get(
-                data->component_measurements,
-                stats[i].handle);
+            ecs_ringbuf_t *values;
 
-            if (values) {
+            if (ecs_map_has(data->component_measurements, stats[i].handle, &values)) {
                 AddRingBufToJson(buf, "mem_used_1m", values);
             }
 
@@ -128,6 +126,7 @@ void AddSystemsToJson(
         if (i) {
             ut_strbuf_appendstr(buf, ",");
         }
+        
         ut_strbuf_append(buf,
             "{\"handle\":%d,\"id\":\"%s\",\"enabled\":%s,\"active\":%s,"\
             "\"tables_matched\":%u,\"entities_matched\":%u,"\
@@ -144,11 +143,8 @@ void AddSystemsToJson(
             stats[i].period,
             (stats[i].time_spent / (frame_time * fps)) * 100 * 100);
 
-        ecs_ringbuf_t *values = ecs_map_get(
-            data->system_measurements,
-            stats[i].handle);
-
-        if (values) {
+        ecs_ringbuf_t *values;
+        if (ecs_map_has(data->system_measurements, stats[i].handle, &values)) {
             AddRingBufToJson(buf, "time_spent_1m", values);
         }
 
@@ -422,7 +418,7 @@ void AddSystemMeasurement(
     EcsSystemStats *buffer = ecs_vector_first(systems);
 
     if (!data->system_measurements) {
-        data->system_measurements = ecs_map_new(count);
+        data->system_measurements = ecs_map_new(count, sizeof(ecs_ringbuf_t*));
     }
 
     for (i = 0; i < count; i ++) {
@@ -431,7 +427,7 @@ void AddSystemMeasurement(
         uint64_t buf64 = 0;
         if (!ecs_map_has(data->system_measurements, system->handle, &buf64)) {
             buf = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT);
-            ecs_map_set(data->system_measurements, system->handle, buf);
+            ecs_map_set(data->system_measurements, system->handle, &buf);
         } else {
             buf = (ecs_ringbuf_t*)(uintptr_t)buf64;
         }
@@ -451,7 +447,7 @@ void AddComponentMeasurements(
     EcsComponentStats *buffer = ecs_vector_first(stats->components);
 
     if (!data->component_measurements) {
-        data->component_measurements = ecs_map_new(stats->component_count);
+        data->component_measurements = ecs_map_new(stats->component_count, sizeof(ecs_ringbuf_t*));
     }
 
     for (i = 0; i < count; i ++) {
@@ -461,7 +457,7 @@ void AddComponentMeasurements(
 
         if (!ecs_map_has(data->component_measurements, component->handle, &buf64)) {
             buf = ecs_ringbuf_new(&double_params, MEASUREMENT_COUNT);
-            ecs_map_set(data->component_measurements, component->handle, buf);
+            ecs_map_set(data->component_measurements, component->handle, &buf);
         } else {
             buf = (ecs_ringbuf_t*)(uintptr_t)buf64;
         }
@@ -621,7 +617,7 @@ void FlecsSystemsAdminImport(
     ECS_COMPONENT(world, EcsAdminCtx);
 
     /* Start admin server when an EcsAdmin component has been initialized */
-    ECS_SYSTEM(world, EcsAdminStart, EcsOnSet, EcsAdmin, ID.EcsAdminMeasurement, $FlecsComponentsHttp, SYSTEM.EcsHidden);
+    ECS_SYSTEM(world, EcsAdminStart, EcsOnSet, EcsAdmin, .EcsAdminMeasurement, $.FlecsComponentsHttp, SYSTEM.EcsHidden);
     ECS_SYSTEM(world, EcsAdminCollectData, EcsOnStore, EcsAdminMeasurement, SYSTEM.EcsHidden);
     ECS_SYSTEM(world, EcsAdminMeasurementDeinit, EcsOnRemove, EcsAdminMeasurement, SYSTEM.EcsHidden);
 
