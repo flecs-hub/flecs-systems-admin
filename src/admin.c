@@ -627,5 +627,5 @@ void FlecsSystemsAdminImport(
     /* Enable frame profiling */
     ecs_measure_frame_time(world, true);
 
-    ECS_SET_COMPONENT(handles, EcsAdmin);
+    ECS_SET_COMPONENT(EcsAdmin);
 }
