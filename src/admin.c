@@ -537,8 +537,7 @@ static
 void EcsAdminStart(ecs_rows_t *rows) {
     ecs_world_t *world = rows->world;
     EcsAdmin *admin = ecs_column(rows, EcsAdmin, 1);
-    
-    ecs_type_t TEcsAdminMeasurement = ecs_column_type(rows, 2);
+    ECS_COLUMN_COMPONENT(rows, EcsAdminMeasurement, 2);
     ECS_IMPORT_COLUMN(rows, FlecsComponentsHttp, 3);
 
     int i;
