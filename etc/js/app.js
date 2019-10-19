@@ -93,7 +93,7 @@ var app = new Vue({
       this.set_system_array_colors(this.world.systems.post_update);
       this.set_system_array_colors(this.world.systems.pre_store);
       this.set_system_array_colors(this.world.systems.on_store);
-      this.set_system_array_colors(this.world.systems.on_demand);
+      this.set_system_array_colors(this.world.systems.manual);
     },
     refresh() {
       const Http = new XMLHttpRequest();

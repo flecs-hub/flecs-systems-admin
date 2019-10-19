@@ -300,7 +300,7 @@ Vue.component('app-system-data', {
       framework_systems += this.countFwSystems(this.world.systems.post_update);
       framework_systems += this.countFwSystems(this.world.systems.pre_store);
       framework_systems += this.countFwSystems(this.world.systems.on_store);
-      framework_systems += this.countFwSystems(this.world.systems.on_demand);
+      framework_systems += this.countFwSystems(this.world.systems.manual);
       framework_systems += this.countFwSystems(this.world.systems.on_add);
       framework_systems += this.countFwSystems(this.world.systems.on_set);
       framework_systems += this.countFwSystems(this.world.systems.on_remove);
@@ -323,7 +323,7 @@ Vue.component('app-system-data', {
     },
     getManualSystems() {
       var length = 0;
-      if (this.world.systems.on_demand) length += this.world.systems.on_demand.length;
+      if (this.world.systems.manual) length += this.world.systems.manual.length;
       return length;
     }
   },
@@ -445,7 +445,7 @@ Vue.component('app-systems', {
 
       <div class="app-row">
         <app-systems-system-table :world="world"
-          :systems="world.systems.on_demand"
+          :systems="world.systems.manual"
           :kind="'manual'"
           v-on:refresh="$emit('refresh', $event)">
         </app-systems-system-table>

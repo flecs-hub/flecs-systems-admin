@@ -237,7 +237,7 @@ char* JsonFromStats(
     ut_strbuf_appendstr(&body, ", ");
     AddSystemsToJson(&body, stats->on_store_systems, "on_store", measurements);
     ut_strbuf_appendstr(&body, ", ");
-    AddSystemsToJson(&body, stats->on_demand_systems, "on_demand", measurements);
+    AddSystemsToJson(&body, stats->manual_systems, "manual", measurements);
     ut_strbuf_appendstr(&body, ", ");
     AddSystemsToJson(&body, stats->on_add_systems, "on_add", measurements);
     ut_strbuf_appendstr(&body, ", ");
@@ -502,7 +502,7 @@ void EcsAdminCollectData(ecs_rows_t *rows) {
         AddSystemMeasurement(&data[i], &stats, stats.post_update_systems, fps);
         AddSystemMeasurement(&data[i], &stats, stats.pre_store_systems, fps);
         AddSystemMeasurement(&data[i], &stats, stats.on_store_systems, fps);
-        AddSystemMeasurement(&data[i], &stats, stats.on_demand_systems, fps);
+        AddSystemMeasurement(&data[i], &stats, stats.manual_systems, fps);
 
         AddComponentMeasurements(&data[i], &stats);
 
