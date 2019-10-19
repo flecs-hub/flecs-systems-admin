@@ -9,6 +9,12 @@
             "flecs.util",
             "flecs.components.http",
             "bake.util"
-        ]
+        ],
+        "use-bundle": ["flecs.hub:default"]
+    },
+    "bundle": {
+        "repositories": {
+            "flecs.hub": "https://github.com/flecs-hub/flecs-hub"
+        }
     }
 }
