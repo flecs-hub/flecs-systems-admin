@@ -4,8 +4,8 @@ A web dashboard for Flecs
 ## Getting started
 First, make sure you clone and build the required dependencies:
 
-- flecs.components.http
-- flecs.systems.civetweb
+- [flecs.components.http](https://github.com/flecs-hub/flecs-components-http)
+- [flecs.systems.civetweb](https://github.com/flecs-hub/flecs-systems-civetweb)
 
 When you are using bake, you can run the following command to install and build all modules:
 
@@ -35,7 +35,7 @@ If you always want to run the admin with your project, you can enable it in code
 
 If you are using bake, you can simply add these modules to the `"use"` property, like this:
 
-```
+```json
 {
     "id": "my_project",
     "type": "application",
@@ -47,7 +47,7 @@ If you are using bake, you can simply add these modules to the `"use"` property,
 
 In your main function, now add the following lines of code:
 
-```
+```c
 ecs_world_t *world = ecs_init();
 
 /* Import modules for admin */
