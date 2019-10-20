@@ -35,60 +35,60 @@ const ecs_vector_params_t double_params = {
 /* Add ringbuf to JSON */
 static
 void AddRingBufToJson(
-    ut_strbuf *buf,
+    ecs_strbuf_t *buf,
     const char *member,
     ecs_ringbuf_t *values)
 {
     uint32_t i, count = ecs_ringbuf_count(values);
-    ut_strbuf_append(buf, ",\"%s\":[", member);
+    ecs_strbuf_append(buf, ",\"%s\":[", member);
 
     for (i = 0; i < count; i ++) {
         if (i) {
-            ut_strbuf_appendstr(buf, ",");
+            ecs_strbuf_appendstr(buf, ",");
         }
         double *value = ecs_ringbuf_get(
             values, &double_params, i);
 
-        ut_strbuf_append(buf, "%f", *value);
+        ecs_strbuf_append(buf, "%f", *value);
     }
 
-    ut_strbuf_appendstr(buf, "]");
+    ecs_strbuf_appendstr(buf, "]");
 }
 
 /* Add measurement to JSON */
 static
 void AddMeasurementToJson(
-    ut_strbuf *buf,
+    ecs_strbuf_t *buf,
     const char *member,
     Measurement *measurement)
 {
-    ut_strbuf_append(buf, ",\"%s\":{", member);
-    ut_strbuf_append(buf, "\"current\":%f", measurement->current);
+    ecs_strbuf_append(buf, ",\"%s\":{", member);
+    ecs_strbuf_append(buf, "\"current\":%f", measurement->current);
     AddRingBufToJson(buf, "data_1m", measurement->data_1m);
     AddRingBufToJson(buf, "data_1h", measurement->data_1h);
     AddRingBufToJson(buf, "min_1h", measurement->min_1h);
     AddRingBufToJson(buf, "max_1h", measurement->max_1h);
-    ut_strbuf_appendstr(buf, "}");
+    ecs_strbuf_appendstr(buf, "}");
 }
 
 /* Add measurement to JSON */
 static
 void AddComponentsToJson(
-    ut_strbuf *buf,
+    ecs_strbuf_t *buf,
     ecs_world_stats_t *world_stats,
     EcsAdminMeasurement *data)
 {
     uint32_t i, count = ecs_vector_count(world_stats->components);
     if (count) {
-        ut_strbuf_append(buf, "\"components\":[");
+        ecs_strbuf_append(buf, "\"components\":[");
         EcsComponentStats *stats = ecs_vector_first(world_stats->components);
 
         for (i = 0; i < count; i ++) {
             if (i) {
-                ut_strbuf_appendstr(buf, ",");
+                ecs_strbuf_appendstr(buf, ",");
             }
 
-            ut_strbuf_append(buf,
+            ecs_strbuf_append(buf,
                 "{\"handle\":%d,\"id\":\"%s\",\"entities\":%u,\"tables\":%u",
                 (uint32_t)stats[i].handle,
                 stats[i].id,
@@ -101,16 +101,16 @@ void AddComponentsToJson(
                 AddRingBufToJson(buf, "mem_used_1m", values);
             }
 
-            ut_strbuf_appendstr(buf, "}");
+            ecs_strbuf_appendstr(buf, "}");
         }
-        ut_strbuf_appendstr(buf, "]");
+        ecs_strbuf_appendstr(buf, "]");
     }
 }
 
 /* Add a system to JSON string */
 static
 void AddSystemsToJson(
-    ut_strbuf *buf,
+    ecs_strbuf_t *buf,
     ecs_vector_t *systems,
     const char *json_member,
     EcsAdminMeasurement *data)
@@ -118,16 +118,16 @@ void AddSystemsToJson(
     double fps = data->fps.current;
     double frame_time = data->frame.current * 1.0 / fps;
 
-    ut_strbuf_append(buf, "\"%s\":[", json_member);
+    ecs_strbuf_append(buf, "\"%s\":[", json_member);
 
     uint32_t i, count = ecs_vector_count(systems);
     EcsSystemStats *stats = ecs_vector_first(systems);
     for (i = 0; i < count; i ++) {
         if (i) {
-            ut_strbuf_appendstr(buf, ",");
+            ecs_strbuf_appendstr(buf, ",");
         }
         
-        ut_strbuf_append(buf,
+        ecs_strbuf_append(buf,
             "{\"handle\":%d,\"id\":\"%s\",\"enabled\":%s,\"active\":%s,"\
             "\"tables_matched\":%u,\"entities_matched\":%u,"\
             "\"signature\":\"%s\",\"is_hidden\":%s,\"period\":%f,"
@@ -148,28 +148,28 @@ void AddSystemsToJson(
             AddRingBufToJson(buf, "time_spent_1m", values);
         }
 
-        ut_strbuf_appendstr(buf, "}");
+        ecs_strbuf_appendstr(buf, "}");
     }
-    ut_strbuf_appendstr(buf, "]");
+    ecs_strbuf_appendstr(buf, "]");
 }
 
 /* Add a feature to JSON string */
 static
 void AddFeaturesToJson(
-    ut_strbuf *buf,
+    ecs_strbuf_t *buf,
     ecs_vector_t *features)
 {
     uint32_t i, count = ecs_vector_count(features);
 
     if (count) {
-        ut_strbuf_append(buf, ",\"features\":[");
+        ecs_strbuf_append(buf, ",\"features\":[");
         EcsFeatureStats *stats = ecs_vector_first(features);
         for (i = 0; i < count; i ++) {
             if (i) {
-                ut_strbuf_appendstr(buf, ",");
+                ecs_strbuf_appendstr(buf, ",");
             }
 
-            ut_strbuf_append(buf,
+            ecs_strbuf_append(buf,
                 "{\"id\":\"%s\",\"entities\":\"%s\",\"system_count\":%u,"\
                 "\"systems_enabled\":%u,\"is_hidden\":%s}",
                 stats[i].id,
@@ -178,7 +178,7 @@ void AddFeaturesToJson(
                 stats[i].systems_enabled,
                 stats[i].is_hidden ? "true" : "false");
         }
-        ut_strbuf_appendstr(buf, "]");
+        ecs_strbuf_appendstr(buf, "]");
     }
 }
 
@@ -189,9 +189,9 @@ char* JsonFromStats(
     ecs_world_stats_t *stats,
     EcsAdminMeasurement *measurements)
 {
-    ut_strbuf body = UT_STRBUF_INIT;
+    ecs_strbuf_t body = ECS_STRBUF_INIT;
 
-    ut_strbuf_append(&body,
+    ecs_strbuf_append(&body,
         "{\"system_count\":%u,\"component_count\":%u,"\
         "\"table_count\":%u,\"entity_count\":%u,\"thread_count\":%u"
         ",\"frame_profiling\":%s,\"system_profiling\":%s",
@@ -200,7 +200,7 @@ char* JsonFromStats(
         stats->frame_profiling ? "true" : "false",
         stats->system_profiling ? "true" : "false");
 
-    ut_strbuf_append(&body, ",\"memory\":{"\
+    ecs_strbuf_append(&body, ",\"memory\":{"\
         "\"total\":{\"allocd\":%u,\"used\":%u},"\
         "\"components\":{\"allocd\":%u,\"used\":%u},"\
         "\"entities\":{\"allocd\":%u,\"used\":%u},"\
@@ -220,31 +220,31 @@ char* JsonFromStats(
 
     AddComponentsToJson(&body, stats, measurements);
 
-    ut_strbuf_appendstr(&body, ",\"systems\":{");
+    ecs_strbuf_appendstr(&body, ",\"systems\":{");
     AddSystemsToJson(&body, stats->on_load_systems, "on_load", measurements);
-    ut_strbuf_appendstr(&body, ", ");
+    ecs_strbuf_appendstr(&body, ", ");
     AddSystemsToJson(&body, stats->post_load_systems, "post_load", measurements);
-    ut_strbuf_appendstr(&body, ", ");
+    ecs_strbuf_appendstr(&body, ", ");
     AddSystemsToJson(&body, stats->pre_update_systems, "pre_update", measurements);
-    ut_strbuf_appendstr(&body, ", ");
+    ecs_strbuf_appendstr(&body, ", ");
     AddSystemsToJson(&body, stats->on_update_systems, "on_update", measurements);
-    ut_strbuf_appendstr(&body, ", ");
+    ecs_strbuf_appendstr(&body, ", ");
     AddSystemsToJson(&body, stats->on_validate_systems, "on_validate", measurements);
-    ut_strbuf_appendstr(&body, ", ");
+    ecs_strbuf_appendstr(&body, ", ");
     AddSystemsToJson(&body, stats->post_update_systems, "post_update", measurements);
-    ut_strbuf_appendstr(&body, ", ");
+    ecs_strbuf_appendstr(&body, ", ");
     AddSystemsToJson(&body, stats->pre_store_systems, "pre_store", measurements);
-    ut_strbuf_appendstr(&body, ", ");
+    ecs_strbuf_appendstr(&body, ", ");
     AddSystemsToJson(&body, stats->on_store_systems, "on_store", measurements);
-    ut_strbuf_appendstr(&body, ", ");
+    ecs_strbuf_appendstr(&body, ", ");
     AddSystemsToJson(&body, stats->manual_systems, "manual", measurements);
-    ut_strbuf_appendstr(&body, ", ");
+    ecs_strbuf_appendstr(&body, ", ");
     AddSystemsToJson(&body, stats->on_add_systems, "on_add", measurements);
-    ut_strbuf_appendstr(&body, ", ");
+    ecs_strbuf_appendstr(&body, ", ");
     AddSystemsToJson(&body, stats->on_set_systems, "on_set", measurements);
-    ut_strbuf_appendstr(&body, ", ");
+    ecs_strbuf_appendstr(&body, ", ");
     AddSystemsToJson(&body, stats->on_remove_systems, "on_remove", measurements);
-    ut_strbuf_appendstr(&body, "}");
+    ecs_strbuf_appendstr(&body, "}");
 
     AddFeaturesToJson(&body, stats->features);
 
@@ -252,9 +252,9 @@ char* JsonFromStats(
     AddMeasurementToJson(&body, "frame", &measurements->frame);
     AddMeasurementToJson(&body, "system", &measurements->system);
 
-    ut_strbuf_appendstr(&body, "}");
+    ecs_strbuf_appendstr(&body, "}");
 
-    return ut_strbuf_get(&body);
+    return ecs_strbuf_get(&body);
 }
 
 /* HTTP endpoint that returns statistics for the world & configures world */
@@ -315,7 +315,7 @@ bool RequestSystems(
     EcsHttpRequest *request,
     EcsHttpReply *reply)
 {
-    ut_strbuf body = UT_STRBUF_INIT;
+    ecs_strbuf_t body = ECS_STRBUF_INIT;
 
     ecs_entity_t system = ecs_lookup(world, request->relative_url);
     if (!system) {
@@ -332,7 +332,7 @@ bool RequestSystems(
         }
     }
 
-    reply->body = ut_strbuf_get(&body);
+    reply->body = ecs_strbuf_get(&body);
 
     return true;
 }
@@ -357,8 +357,11 @@ bool RequestFiles(
 
     sprintf(bake_file, "%s/%s", etc_path, file);
 
-    if (ut_file_test(bake_file) != 1) {
+    FILE *f = fopen(bake_file, "r");
+    if (!f) {
         return false;
+    } else {
+        fclose(f);
     }
 
     reply->body = strdup(bake_file);
