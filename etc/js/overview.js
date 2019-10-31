@@ -58,7 +58,7 @@ var app_overview = {
           yAxisID: "pct"
         },
         {
-          label: 'Total %',
+          label: 'Frame %',
           data: [],
           backgroundColor: [ 'rgba(0,0,0,0)' ],
           borderColor: [
@@ -170,20 +170,16 @@ Vue.component('app-overview-fps-graph', {
   methods: {
     setValues() {
       var labels = [];
-      var merge = [];
       var length = this.world.fps.data_1m.length;
       for (var i = 0; i < length; i ++) {
           labels.push((length  - i) + "s");
-          var frame = this.world.frame.data_1m[i];
-          var system = this.world.system.data_1m[i];
-          merge.push(frame - system);
       }
 
       app_overview.fps_chart.data.labels = labels;
       app_overview.fps_chart.data.datasets[0].data = this.world.fps.data_1m;
-      app_overview.fps_chart.data.datasets[1].data = this.world.system.data_1m;
-      app_overview.fps_chart.data.datasets[2].data = merge;
       app_overview.fps_chart.data.datasets[3].data = this.world.frame.data_1m;
+      app_overview.fps_chart.data.datasets[1].data = this.world.system.data_1m;
+      app_overview.fps_chart.data.datasets[2].data = this.world.merge.data_1m;
     },
     createChart() {
       const ctx = document.getElementById('fps-graph');
@@ -220,23 +216,23 @@ Vue.component('app-overview-mem-graph', {
   },
   methods: {
     setLabels() {
-      app_overview.mem_chart.data.labels[0] = "Components (" + this.world.memory.components.used / 1000 + "KB)";
-      app_overview.mem_chart.data.labels[1] = "Entities (" + this.world.memory.entities.used / 1000 + "KB)";
-      app_overview.mem_chart.data.labels[2] = "Systems (" + this.world.memory.systems.used / 1000 + "KB)";
-      app_overview.mem_chart.data.labels[3] = "Families (" + this.world.memory.families.used / 1000 + "KB)";
-      app_overview.mem_chart.data.labels[4] = "Tables (" + this.world.memory.tables.used / 1000 + "KB)";
-      app_overview.mem_chart.data.labels[5] = "Stage (" + this.world.memory.stage.allocd / 1000 + "KB)";
-      app_overview.mem_chart.data.labels[6] = "World (" + this.world.memory.world.used / 1000 + "KB)";
+      app_overview.mem_chart.data.labels[0] = "Components (" + this.world.memory.components.used.current / 1000 + "KB)";
+      app_overview.mem_chart.data.labels[1] = "Entities (" + this.world.memory.entities.used.current / 1000 + "KB)";
+      app_overview.mem_chart.data.labels[2] = "Systems (" + this.world.memory.systems.used.current / 1000 + "KB)";
+      app_overview.mem_chart.data.labels[3] = "Types (" + this.world.memory.types.used.current / 1000 + "KB)";
+      app_overview.mem_chart.data.labels[4] = "Tables (" + this.world.memory.tables.used.current / 1000 + "KB)";
+      app_overview.mem_chart.data.labels[5] = "Stage (" + this.world.memory.stages.allocd.current / 1000 + "KB)";
+      app_overview.mem_chart.data.labels[6] = "World (" + this.world.memory.world.used.current / 1000 + "KB)";
     },
     updateValues() {
       app_overview.mem_chart.data.datasets[0].data = [
-        this.world.memory.components.used,
-        this.world.memory.entities.used,
-        this.world.memory.systems.used,
-        this.world.memory.families.used,
-        this.world.memory.tables.used,
-        this.world.memory.stage.allocd,
-        this.world.memory.world.allocd
+        this.world.memory.components.used.current,
+        this.world.memory.entities.used.current,
+        this.world.memory.systems.used.current,
+        this.world.memory.types.used.current,
+        this.world.memory.tables.used.current,
+        this.world.memory.stages.allocd.current,
+        this.world.memory.world.allocd.current
       ];
     },
     updateChart() {
@@ -337,8 +333,8 @@ Vue.component('app-system-row', {
   props: ['world', 'system', 'kind'],
   methods: {
     enabledColor() {
-      if (this.system.enabled) {
-        if (this.system.active) {
+      if (this.system.is_enabled) {
+        if (this.system.is_active) {
           return "#5BE595";
         } else {
           return "orange";
@@ -355,8 +351,8 @@ Vue.component('app-system-row', {
       }
     },
     statusText() {
-      if (this.system.enabled) {
-        if (this.system.active) {
+      if (this.system.is_enabled) {
+        if (this.system.is_active) {
           return "active";
         } else {
           return "inactive";
@@ -372,16 +368,16 @@ Vue.component('app-system-row', {
         <svg height="10" width="10">
           <circle cx="5" cy="5" r="4" stroke-width="0" :fill="enabledColor()"/>
         </svg>
-        &nbsp;{{system.id}}
+        &nbsp;{{system.name}}
       </td>
       <td>
         {{system.entities_matched}}
       </td>
       <td>
         <app-toggle
-          :text="buttonText(system.enabled)"
-          :enabled="system.enabled"
-          :link="'systems/' + system.id"
+          :text="buttonText(system.is_enabled)"
+          :enabled="system.is_enabled"
+          :link="'systems/' + system.name"
           v-on:refresh="$emit('refresh', $event)">
         </app-toggle>
       </td>
@@ -408,49 +404,49 @@ Vue.component('app-systems-table', {
             <app-system-row
               v-for="system in world.systems.on_load"
               v-if="!system.is_hidden"
-              :key="system.id"
+              :key="system.name"
               :system="system"
               v-on:refresh="$emit('refresh', $event)">
             </app-system-row>
             <app-system-row
               v-for="system in world.systems.post_load"
               v-if="!system.is_hidden"
-              :key="system.id"
+              :key="system.name"
               :system="system"
               v-on:refresh="$emit('refresh', $event)">
             </app-system-row>            
             <app-system-row
               v-for="system in world.systems.pre_update"
               v-if="!system.is_hidden"
-              :key="system.id"
+              :key="system.name"
               :system="system"
               v-on:refresh="$emit('refresh', $event)">
             </app-system-row>
             <app-system-row
               v-for="system in world.systems.on_update"
               v-if="!system.is_hidden"
-              :key="system.id"
+              :key="system.name"
               :system="system"
               v-on:refresh="$emit('refresh', $event)">
             </app-system-row>
             <app-system-row
               v-for="system in world.systems.post_update"
               v-if="!system.is_hidden"
-              :key="system.id"
+              :key="system.name"
               :system="system"
               v-on:refresh="$emit('refresh', $event)">
             </app-system-row>
             <app-system-row
               v-for="system in world.systems.pre_store"
               v-if="!system.is_hidden"
-              :key="system.id"
+              :key="system.name"
               :system="system"
               v-on:refresh="$emit('refresh', $event)">
             </app-system-row>
             <app-system-row
               v-for="system in world.systems.on_store"
               v-if="!system.is_hidden"
-              :key="system.id"
+              :key="system.name"
               :system="system"
               v-on:refresh="$emit('refresh', $event)">
             </app-system-row>
@@ -466,9 +462,12 @@ Vue.component('app-feature-row', {
     entitiesString() {
       return shortenText(this.feature.entities, 30);
     },
+    systemCount() {
+      return this.feature.col_system_count + this.feature.row_system_count;
+    },
     enabledColor() {
-      if (this.feature.systems_enabled) {
-        if (this.feature.systems_enabled == this.feature.system_count) {
+      if (this.feature.enabled_system_count) {
+        if (this.feature.enabled_system_count == this.systemCount()) {
           return "#5BE595";
         } else {
           return "orange";
@@ -478,7 +477,7 @@ Vue.component('app-feature-row', {
       }
     },
     buttonText() {
-      if (this.feature.systems_enabled) {
+      if (this.feature.enabled_system_count) {
         return "disable";
       } else {
         return "enable";
@@ -491,16 +490,16 @@ Vue.component('app-feature-row', {
         <svg height="10" width="10">
           <circle cx="5" cy="5" r="4" stroke-width="0" :fill="enabledColor()"/>
         </svg>
-        &nbsp;{{feature.id}}
+        &nbsp;{{feature.name}}
       </td>
       <td>
-        {{feature.systems_enabled}} / {{feature.system_count}}
+        {{feature.enabled_system_count}} / {{this.systemCount()}}
       </td>
       <td>
         <app-toggle
-          :text="buttonText(this.feature.systems_enabled != 0)"
-          :enabled="this.feature.systems_enabled != 0"
-          :link="'systems/' + feature.id"
+          :text="buttonText(feature.enabled_system_count != 0)"
+          :enabled="feature.enabled_system_count != 0"
+          :link="'systems/' + feature.name"
           v-on:refresh="$emit('refresh', $event)">
         </app-toggle>
       </td>
@@ -525,9 +524,9 @@ Vue.component('app-features', {
           </thead>
           <tbody>
             <app-feature-row
-              v-for="feature in world.features"
-              v-if="!feature.is_hidden"
-              :key="feature.id"
+              v-for="feature in world.types"
+              v-if="!feature.is_hidden && (feature.col_system_count || feature.row_system_count)"
+              :key="feature.name"
               :feature="feature"
               v-on:refresh="$emit('refresh', $event)">
             </app-feature-row>
@@ -570,7 +569,7 @@ Vue.component('app-world-data', {
             <tbody v-if="world && world.memory && world.memory.total">
               <td>{{world.fps.current.toFixed(2)}} Hz</td>
               <td>{{world.frame.current.toFixed(2)}}%</td>
-              <td>{{(world.memory.total.allocd / 1000).toFixed(2)}} KB</td>
+              <td>{{(world.memory.total.allocd.current / 1000).toFixed(2)}} KB</td>
               <td>{{world.entity_count}}</td>
               <td>{{world.thread_count}}</td>
             </tbody>

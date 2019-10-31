@@ -39,7 +39,7 @@ var app_mem = {
         'Systems',
         'Types',
         'Tables',
-        'Stage',
+        'Stages',
         'World'
       ]
     },
@@ -171,8 +171,8 @@ Vue.component('app-mem-total-graph', {
   methods: {
     updateValues() {
       app_mem.total_chart.data.datasets[0].data = [
-        this.world.memory.total.used,
-        this.world.memory.total.allocd - this.world.memory.total.used,
+        this.world.memory.total.used.current,
+        this.world.memory.total.allocd.current - this.world.memory.total.used.current,
       ];
     },
     updateChart() {
@@ -213,22 +213,22 @@ Vue.component('app-mem-categories-graph', {
   methods: {
     updateValues() {
       app_mem.categories_chart.data.datasets[0].data = [
-        this.world.memory.components.used,
-        this.world.memory.entities.used,
-        this.world.memory.systems.used,
-        this.world.memory.families.used,
-        this.world.memory.tables.used,
-        this.world.memory.stage.used,
-        this.world.memory.world.used
+        this.world.memory.components.used.current,
+        this.world.memory.entities.used.current,
+        this.world.memory.systems.used.current,
+        this.world.memory.types.used.current,
+        this.world.memory.tables.used.current,
+        this.world.memory.stages.used.current,
+        this.world.memory.world.used.current
       ];
       app_mem.categories_chart.data.datasets[1].data = [
-        this.world.memory.components.allocd - this.world.memory.components.used,
-        this.world.memory.entities.allocd - this.world.memory.entities.used,
-        this.world.memory.systems.allocd - this.world.memory.systems.used,
-        this.world.memory.families.allocd - this.world.memory.families.used,
-        this.world.memory.tables.allocd - this.world.memory.tables.used,
-        this.world.memory.stage.allocd - this.world.memory.stage.used,
-        this.world.memory.world.allocd - this.world.memory.world.used
+        this.world.memory.components.allocd.current - this.world.memory.components.used.current,
+        this.world.memory.entities.allocd.current - this.world.memory.entities.used.current,
+        this.world.memory.systems.allocd.current - this.world.memory.systems.used.current,
+        this.world.memory.types.allocd.current - this.world.memory.types.used.current,
+        this.world.memory.tables.allocd.current - this.world.memory.tables.used.current,
+        this.world.memory.stages.allocd.current - this.world.memory.stages.used.current,
+        this.world.memory.world.allocd.current - this.world.memory.world.used.current
       ];
     },
     updateChart() {
@@ -289,16 +289,13 @@ Vue.component('app-mem-comp-table', {
   methods: {
     toKB(num) {
       return (num / 1000).toFixed(2) + "KB";
-    },
-    last_measurement(component) {
-      return component.mem_used_1m[component.mem_used_1m.length - 1];
     }
   },
   computed: {
     sorted_components: function() {
       var arr = this.world.components.slice();
       return arr.sort((el1, el2) => {
-        return this.last_measurement(el2) - this.last_measurement(el1);
+        return el2.memory.used.current - el1.memory.used.current;
       });
     }
   },
@@ -319,10 +316,10 @@ Vue.component('app-mem-comp-table', {
           </thead>
           <tbody>
             <tr v-for="component in sorted_components">
-            <td>{{component.id}}</td>
-            <td>{{toKB(last_measurement(component))}}</td>
-            <td>{{component.entities}}</td>
-            <td>{{component.tables}}</td>
+            <td>{{component.name}}</td>
+            <td>{{toKB(component.memory.used.current)}}</td>
+            <td>{{component.entity_count}}</td>
+            <td>{{component.table_count}}</td>
             </tr>
           </tbody>
         </table>
@@ -345,11 +342,11 @@ Vue.component('app-mem-comp-graph', {
   },  
   methods: {
     avgMem(component) {
-      var length = component.mem_used_1m.length;
+      var length = component.memory.used.data_1m.length;
       var result = 0;
 
       for (var i = 0; i < length; i ++) {
-        result += component.mem_used_1m[i];
+        result += component.memory.used.data_1m[i];
       }
 
       return result / length;
@@ -358,7 +355,7 @@ Vue.component('app-mem-comp-graph', {
       var labels = [];
       var components = this.world.components;
 
-      var length = this.world.components[0].mem_used_1m.length;
+      var length = this.world.frame.data_1m.length;
       for (var i = 0; i < length; i ++) {
           labels.push((length  - i) + "s");
       }
@@ -376,14 +373,14 @@ Vue.component('app-mem-comp-graph', {
             }
           }
 
-          if (this.avgMem(component) < (this.world.memory.total.used / 100)) {
+          if (this.avgMem(component) < (this.world.memory.components.used.current / 10.0)) {
             app_mem.comp_1min_chart.data.datasets[0].label = "Other";
-            app_mem.comp_1min_chart.data.datasets[0].data = component.mem_used_1m;
+            app_mem.comp_1min_chart.data.datasets[0].data = component.memory.used.data_1m;
             app_mem.comp_1min_chart.data.datasets[0].borderColor = "#000";
             app_mem.comp_1min_chart.data.datasets[0].backgroundColor = colors[0];
           } else {
-            app_mem.comp_1min_chart.data.datasets[dataset].label = component.id;
-            app_mem.comp_1min_chart.data.datasets[dataset].data = component.mem_used_1m;
+            app_mem.comp_1min_chart.data.datasets[dataset].label = component.name;
+            app_mem.comp_1min_chart.data.datasets[dataset].data = component.memory.used.data_1m;
             app_mem.comp_1min_chart.data.datasets[dataset].borderColor = "#000";
             app_mem.comp_1min_chart.data.datasets[dataset].backgroundColor = colors[dataset % colors.length];
             dataset ++;
@@ -418,8 +415,8 @@ Vue.component('app-mem-data', {
   methods: {
     computeOverhead() {
       var overhead = 100 -
-        ((this.world.memory.components.used + this.world.memory.entities.used) /
-        this.world.memory.total.allocd) * 100;
+        ((this.world.memory.components.used.current + this.world.memory.entities.used.current) /
+        this.world.memory.total.allocd.current) * 100;
       return overhead.toFixed(2) + "%";
     },
     toKB(num) {
@@ -436,14 +433,14 @@ Vue.component('app-mem-data', {
               <th>in use</th>
               <th>components</th>
               <th>entities</th>
-              <th>framework overhead</th>
+              <th>app data %</th>
             </tr>
           </thead>
           <tbody v-if="world && world.memory && world.memory.total">
-            <td>{{toKB(world.memory.total.allocd)}}</td>
-            <td>{{toKB(world.memory.total.used)}}</td>
-            <td>{{toKB(world.memory.components.used)}}</td>
-            <td>{{toKB(world.memory.entities.used)}}</td>
+            <td>{{toKB(world.memory.total.allocd.current)}}</td>
+            <td>{{toKB(world.memory.total.used.current)}}</td>
+            <td>{{toKB(world.memory.components.used.current)}}</td>
+            <td>{{toKB(world.memory.entities.used.current)}}</td>
             <td>{{computeOverhead()}}</td>
           </tbody>
         </table>

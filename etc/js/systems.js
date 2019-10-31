@@ -14,8 +14,8 @@ Vue.component('app-systems-reactive-system-row', {
   props: ['world', 'system', 'kind'],
   methods: {
     enabledColor() {
-      if (this.system.enabled) {
-        if (this.system.active) {
+      if (this.system.is_enabled) {
+        if (this.system.is_active) {
           return "#5BE595";
         } else {
           return "orange";
@@ -32,8 +32,8 @@ Vue.component('app-systems-reactive-system-row', {
       }
     },
     statusText() {
-      if (this.system.enabled) {
-        if (this.system.active) {
+      if (this.system.is_enabled) {
+        if (this.system.is_active) {
           return "active";
         } else {
           return "inactive";
@@ -46,7 +46,7 @@ Vue.component('app-systems-reactive-system-row', {
   template: `
     <tr>
       <td>
-        &nbsp;{{system.id}}
+        &nbsp;{{system.name}}
       </td>
       <td>
         {{system.signature}}
@@ -61,8 +61,8 @@ Vue.component('app-systems-system-row', {
   props: ['world', 'system', 'kind'],
   methods: {
     enabledColor() {
-      if (this.system.enabled) {
-        if (this.system.active) {
+      if (this.system.is_enabled) {
+        if (this.system.is_active) {
           return "#5BE595";
         } else {
           return "orange";
@@ -79,8 +79,8 @@ Vue.component('app-systems-system-row', {
       }
     },
     statusText() {
-      if (this.system.enabled) {
-        if (this.system.active) {
+      if (this.system.is_enabled) {
+        if (this.system.is_active) {
           return "active";
         } else {
           return "inactive";
@@ -99,7 +99,7 @@ Vue.component('app-systems-system-row', {
         <svg height="10" width="10">
           <circle cx="5" cy="5" r="4" stroke-width="0" :fill="enabledColor()"/>
         </svg>
-        &nbsp;{{system.id}}
+        &nbsp;{{system.name}}
       </td>
       <td>
         {{system.entities_matched}}
@@ -116,9 +116,9 @@ Vue.component('app-systems-system-row', {
         <app-systems-warning :is_hidden="system.is_hidden">
         </app-systems-warning>
         <app-toggle
-          :text="buttonText(system.enabled)"
-          :enabled="system.enabled"
-          :link="'systems/' + system.id"
+          :text="buttonText(system.is_enabled)"
+          :enabled="system.is_enabled"
+          :link="'systems/' + system.name"
           v-on:refresh="$emit('refresh', $event)">
         </app-toggle>
       </td>
@@ -145,7 +145,7 @@ Vue.component('app-systems-system-table', {
           <tbody>
             <app-systems-system-row
               v-for="system in systems"
-              :key="system.id"
+              :key="system.name"
               :system="system"
               v-on:refresh="$emit('refresh', $event)">
             </app-systems-system-row>
@@ -174,21 +174,21 @@ Vue.component('app-systems-reactive-system-table', {
           <tbody>
             <app-systems-reactive-system-row
               v-for="system in world.systems.on_add"
-              :key="system.id"
+              :key="system.name"
               :system="system"
               :kind="'on add'"
               v-on:refresh="$emit('refresh', $event)">
             </app-systems-reactive-system-row>
             <app-systems-reactive-system-row
               v-for="system in world.systems.on_set"
-              :key="system.id"
+              :key="system.name"
               :system="system"
               :kind="'on set'"
               v-on:refresh="$emit('refresh', $event)">
             </app-systems-reactive-system-row>
             <app-systems-reactive-system-row
               v-for="system in world.systems.on_remove"
-              :key="system.id"
+              :key="system.name"
               :system="system"
               :kind="'on remove'"
               v-on:refresh="$emit('refresh', $event)">
@@ -205,9 +205,12 @@ Vue.component('app-systems-feature-row', {
     entitiesString() {
       return shortenText(this.feature.entities, 30);
     },
+    systemCount() {
+      return this.feature.col_system_count + this.feature.row_system_count;
+    },
     enabledColor() {
-      if (this.feature.systems_enabled) {
-        if (this.feature.systems_enabled == this.feature.system_count) {
+      if (this.feature.enabled_system_count) {
+        if (this.feature.enabled_system_count == this.systemCount()) {
           return "#5BE595";
         } else {
           return "orange";
@@ -217,7 +220,7 @@ Vue.component('app-systems-feature-row', {
       }
     },
     buttonText() {
-      if (this.feature.systems_enabled) {
+      if (this.feature.enabled_system_count) {
         return "disable";
       } else {
         return "enable";
@@ -230,18 +233,18 @@ Vue.component('app-systems-feature-row', {
         <svg height="10" width="10">
           <circle cx="5" cy="5" r="4" stroke-width="0" :fill="enabledColor()"/>
         </svg>
-        &nbsp;{{feature.id}}
+        &nbsp;{{feature.name}}
       </td>
       <td>
-        {{feature.systems_enabled}} / {{feature.system_count}}
+        {{feature.enabled_system_count}} / {{systemCount()}}
       </td>
       <td>
         <app-systems-warning :is_hidden="feature.is_hidden">
         </app-systems-warning>
         <app-toggle
-          :text="buttonText(this.feature.systems_enabled != 0)"
-          :enabled="this.feature.systems_enabled != 0"
-          :link="'systems/' + feature.id"
+          :text="buttonText(this.feature.enabled_system_count != 0)"
+          :enabled="this.feature.enabled_syste_count != 0"
+          :link="'systems/' + feature.name"
           v-on:refresh="$emit('refresh', $event)">
         </app-toggle>
       </td>
@@ -266,7 +269,8 @@ Vue.component('app-systems-features', {
           </thead>
           <tbody>
             <app-systems-feature-row
-              v-for="feature in world.features"
+              v-for="feature in world.types"
+              v-if="feature.col_system_count || feature.row_system_count"
               :key="feature.id"
               :feature="feature"
               v-on:refresh="$emit('refresh', $event)">
@@ -280,31 +284,16 @@ Vue.component('app-systems-features', {
 Vue.component('app-system-data', {
   props: ['world'],
   methods: {
-    countFwSystems(systems) {
+    countEnabledSystems(systems) {
       var result = 0;
       if (systems) {
         for (var i = 0; i < systems.length; i ++) {
-          if (systems[i].is_hidden) {
+          if (systems[i].is_enabled) {
             result ++;
           }
         }
       }
       return result;
-    },
-    getFrameworkSystems() {
-      var framework_systems = this.countFwSystems(this.world.systems.on_load);
-      framework_systems += this.countFwSystems(this.world.systems.post_load);
-      framework_systems += this.countFwSystems(this.world.systems.pre_update);
-      framework_systems += this.countFwSystems(this.world.systems.on_update);
-      framework_systems += this.countFwSystems(this.world.systems.on_validate);
-      framework_systems += this.countFwSystems(this.world.systems.post_update);
-      framework_systems += this.countFwSystems(this.world.systems.pre_store);
-      framework_systems += this.countFwSystems(this.world.systems.on_store);
-      framework_systems += this.countFwSystems(this.world.systems.manual);
-      framework_systems += this.countFwSystems(this.world.systems.on_add);
-      framework_systems += this.countFwSystems(this.world.systems.on_set);
-      framework_systems += this.countFwSystems(this.world.systems.on_remove);
-      return framework_systems;
     },
     getReactiveSystems() {
       var length = 0;
@@ -313,18 +302,43 @@ Vue.component('app-system-data', {
       if (this.world.systems.on_set) length += this.world.systems.on_set.length;
       return length;
     },
-    getOnFrameSystems() {
+    getPeriodicSystems() {
       var length = 0;
+      if (this.world.systems.on_load) length += this.world.systems.on_load.length;
+      if (this.world.systems.post_load) length += this.world.systems.post_load.length;
       if (this.world.systems.pre_update) length += this.world.systems.pre_update.length;
       if (this.world.systems.on_update) length += this.world.systems.on_update.length;
       if (this.world.systems.on_validate) length += this.world.systems.on_validate.length;
       if (this.world.systems.post_update) length += this.world.systems.post_update.length;
+      if (this.world.systems.pre_store) length += this.world.systems.pre_store.length;
+      if (this.world.systems.on_store) length += this.world.systems.on_store.length;
       return length;
     },
     getManualSystems() {
       var length = 0;
       if (this.world.systems.manual) length += this.world.systems.manual.length;
       return length;
+    },
+    getEnabledSystems() {
+      var enabledSystems = this.countEnabledSystems(this.world.systems.on_load);
+      enabledSystems += this.countEnabledSystems(this.world.systems.on_load);
+      enabledSystems += this.countEnabledSystems(this.world.systems.post_load);
+      enabledSystems += this.countEnabledSystems(this.world.systems.pre_update);
+      enabledSystems += this.countEnabledSystems(this.world.systems.on_update);
+      enabledSystems += this.countEnabledSystems(this.world.systems.on_validate);
+      enabledSystems += this.countEnabledSystems(this.world.systems.post_update);
+      enabledSystems += this.countEnabledSystems(this.world.systems.pre_store);
+      enabledSystems += this.countEnabledSystems(this.world.systems.on_store);
+      enabledSystems += this.countEnabledSystems(this.world.systems.manual);
+      enabledSystems += this.countEnabledSystems(this.world.systems.on_add);
+      enabledSystems += this.countEnabledSystems(this.world.systems.on_remove);
+      enabledSystems += this.countEnabledSystems(this.world.systems.on_set);
+      return enabledSystems;
+    },
+    getTotalSystems() {
+      return this.getReactiveSystems() + 
+        this.getPeriodicSystems() + 
+        this.getManualSystems();
     }
   },
   template: `
@@ -334,18 +348,18 @@ Vue.component('app-system-data', {
           <thead>
             <tr>
               <th>total systems</th>
-              <th>hidden systems</th>
-              <th>on update systems</th>
+              <th>periodic systems</th>
               <th>manual systems</th>
               <th>reactive systems</th>
+              <th>enabled systems</th>
             </tr>
           </thead>
           <tbody v-if="world && world.memory && world.memory.total">
             <td>{{world.system_count}}</td>
-            <td>{{getFrameworkSystems()}}</td>
-            <td>{{getOnFrameSystems()}}</td>
+            <td>{{getPeriodicSystems()}}</td>
             <td>{{getManualSystems()}}</td>
             <td>{{getReactiveSystems()}}</td>
+            <td>{{getEnabledSystems()}} / {{getTotalSystems()}}</td>
           </tbody>
         </table>
       </div>

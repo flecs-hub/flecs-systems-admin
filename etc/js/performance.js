@@ -244,8 +244,8 @@ function systemActivity1m(system) {
   var result = 0;
   var max = 0;
   if (system) {
-    for (var i = 0; i < system.time_spent_1m.length; i ++) {
-      var time_spent = system.time_spent_1m[i];
+    for (var i = 0; i < system.time_spent_pct.data_1m.length; i ++) {
+      var time_spent = system.time_spent_pct.data_1m[i];
       result += time_spent;
       if (time_spent > max) {
         max = time_spent;
@@ -258,6 +258,7 @@ function systemActivity1m(system) {
 function getActiveSystems1m(world, include_other = true) {
   var result = [];
   var systems = [];
+  var time_spent_array = [];
   if (world.systems.on_load) systems = systems.concat(world.systems.on_load);
   if (world.systems.post_load) systems = systems.concat(world.systems.post_load);
   if (world.systems.pre_update) systems = systems.concat(world.systems.pre_update);
@@ -267,15 +268,25 @@ function getActiveSystems1m(world, include_other = true) {
   if (world.systems.pre_store) systems = systems.concat(world.systems.pre_store);
   if (world.systems.on_store) systems = systems.concat(world.systems.on_store);
 
-  var threshold = 1.0 * systems[0].time_spent_1m.length;
   var other = 0;
+  var max_max = 0;
 
   for (var i = 0; i < systems.length; i ++) {
     var system = systems[i];
     var time_spent = systemActivity1m(system);
+    if (time_spent.max > max_max) {
+      max_max = time_spent.max;
+    }
+    time_spent_array.push(time_spent);
+  }
 
-    if (time_spent.max > 1.0) {
-      result.push(system);
+  var threshold = max_max / 10.0;
+
+  for (var i = 0; i < systems.length; i ++) {
+    var time_spent = time_spent_array[i];
+
+    if (time_spent.max > threshold) {
+      result.push(systems[i]);
     } else {
       other += time_spent.total;
     }
@@ -283,8 +294,10 @@ function getActiveSystems1m(world, include_other = true) {
 
   if (include_other && other) {
     result.push({
-      id: "Other",
-      time_spent: other
+      name: "Other",
+      time_spent_pct: {
+        current: other
+      }
     });
   }
 
@@ -396,7 +409,8 @@ Vue.component('app-performance-sys-1min-graph', {
     setValues() {
       var labels = [];
       var frame_pct = [];
-      var length = this.world.systems.on_update[0].time_spent_1m.length;
+
+      var length = this.world.frame.data_1m.length;
       for (var i = 0; i < length; i ++) {
           labels.push((length  - i) + "s");
       }
@@ -415,10 +429,11 @@ Vue.component('app-performance-sys-1min-graph', {
               pointRadius: 0
             }
           }
-          app_performance.sys_1min_chart.data.datasets[dataset].label = system.id;
-          app_performance.sys_1min_chart.data.datasets[dataset].data = system.time_spent_1m;
+          
+          app_performance.sys_1min_chart.data.datasets[dataset].label = system.name;
+          app_performance.sys_1min_chart.data.datasets[dataset].data = system.time_spent_pct.data_1m;
           app_performance.sys_1min_chart.data.datasets[dataset].borderColor = "#000";
-          app_performance.sys_1min_chart.data.datasets[dataset].backgroundColor = this.world.system_colors[system.id];
+          app_performance.sys_1min_chart.data.datasets[dataset].backgroundColor = this.world.system_colors[system.name];
 
           dataset ++;
       }
@@ -462,7 +477,7 @@ Vue.component('app-performance-sys-graph', {
     setLabels(systems) {
       var labels = []
       for (var i = 0; i < systems.length; i ++) {
-         labels.push(systems[i].id);
+         labels.push(systems[i].name);
       }
       app_performance.mem_chart.data.labels = labels;
     },
@@ -471,8 +486,8 @@ Vue.component('app-performance-sys-graph', {
       var bgColor = [];
       for (var i = 0; i < systems.length; i ++) {
         var system = systems[i];
-        data.push(system.time_spent);
-        bgColor.push(this.world.system_colors[system.id]);
+        data.push(system.time_spent_pct.current);
+        bgColor.push(this.world.system_colors[system.name]);
       }
 
       app_performance.mem_chart.data.datasets[0].data = data;
@@ -508,8 +523,8 @@ Vue.component('app-performance-system-table', {
   props: ['world'],
   methods: {
     enabledColor(system) {
-      if (system.enabled) {
-        if (system.active) {
+      if (system.is_enabled) {
+        if (system.is_active) {
           return "#5BE595";
         } else {
           return "orange";
@@ -566,7 +581,7 @@ Vue.component('app-performance-system-table', {
                 <svg height="10" width="10">
                   <circle cx="5" cy="5" r="4" stroke-width="0" :fill="enabledColor(system)"/>
                 </svg>
-                &nbsp;{{system.id}}
+                &nbsp;{{system.name}}
               </td>
               <td>
                 <div v-if="system.period != 0">
@@ -577,15 +592,15 @@ Vue.component('app-performance-system-table', {
                 </div>
               </td>
               <td>
-                {{system.time_spent.toFixed(2)}}%
+                {{system.time_spent_pct.current.toFixed(2)}}%
               </td>
               <td>
                 <app-systems-warning :is_hidden="system.is_hidden">
                 </app-systems-warning>
                 <app-toggle
-                  :text="buttonText(system.enabled)"
-                  :enabled="system.enabled"
-                  :link="'systems/' + system.id"
+                  :text="buttonText(system.is_enabled)"
+                  :enabled="system.is_enabled"
+                  :link="'systems/' + system.name"
                   v-on:refresh="$emit('refresh', $event)">
                 </app-toggle>
               </td>
@@ -598,10 +613,6 @@ Vue.component('app-performance-system-table', {
 
 Vue.component('app-perf-summary', {
   props: ['world'],
-  mounted() {
-    this.$refs.frame_profiling_input.checked = this.world.frame_profiling;
-    this.$refs.system_profiling_input.checked = this.world.system_profiling;
-  },
   methods: {
     set_frame_profiling(el) {
       const Http = new XMLHttpRequest();
@@ -634,8 +645,6 @@ Vue.component('app-perf-summary', {
               <th>Load</th>
               <th>Systems</th>
               <th>Entities</th>
-              <th>Frame profiling</th>
-              <th>System profiling</th>
             </tr>
           </thead>
           <tbody>
@@ -643,22 +652,6 @@ Vue.component('app-perf-summary', {
             <td>{{world.frame.current.toFixed(2)}}%</td>
             <td>{{world.system.current.toFixed(2)}}%</td>
             <td>{{world.entity_count}}</td>
-            <td>
-              <label class="switch">
-                <input type="checkbox"
-                  ref="frame_profiling_input"
-                  v-on:change="set_frame_profiling($event.target)">
-                <span class="slider round"></span>
-              </label>
-            </td>
-            <td>
-              <label class="switch">
-                <input type="checkbox"
-                  ref="system_profiling_input"
-                  v-on:change="set_system_profiling($event.target)">
-                <span class="slider round"></span>
-              </label>
-            </td>
           </tbody>
         </table>
       </div>

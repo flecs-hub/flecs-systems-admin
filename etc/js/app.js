@@ -70,7 +70,7 @@ var app = new Vue({
 
   methods: {
     get_system_color(system) {
-      return this.system_colors[system.id];
+      return this.system_colors[system.name];
     },
     set_system_array_colors(systems) {
       if (systems) {
@@ -78,7 +78,7 @@ var app = new Vue({
           var system = systems[i];
           var color = this.get_system_color(system);
           if (!color) {
-            this.system_colors[system.id] = colors[this.last_color];
+            this.system_colors[system.name] = colors[this.last_color];
             this.last_color = (this.last_color + 1) % colors.length;
           }
         }
