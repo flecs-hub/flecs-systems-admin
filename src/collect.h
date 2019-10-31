@@ -1,5 +1,9 @@
 #include <flecs_systems_admin.h>
 
+/* The AdminCollect module collects statistics from the FlecsStats module and
+ * stores them in a way that is easy to use for the AdminHttp module. */
+
+/* Type that keeps track of a metric over 1m, 1h and tracks min & max */
 typedef struct admin_stat_t {
     double current;
     ecs_ringbuf_t *data_1m;
@@ -8,11 +12,13 @@ typedef struct admin_stat_t {
     ecs_ringbuf_t *max_1h;
 } admin_stat_t;
 
+/* For each memory metric both memory in use and memory allocated is tracked */
 typedef struct admin_memory_stat_t {
     admin_stat_t used;
     admin_stat_t allocd;
 } admin_memory_stat_t;
 
+/* Admin specific world stats */
 typedef struct AdminWorldStats {
     uint64_t tick;
     admin_stat_t fps;
@@ -20,13 +26,14 @@ typedef struct AdminWorldStats {
     admin_stat_t system;
     admin_stat_t merge;
 
-    /* Previous tick */
+    /* Keep data from previous tick to compute diff with current */
     double prev_frame_time;
     double prev_system_time;
     double prev_merge_time;
     uint64_t prev_tick;
 } AdminWorldStats;
 
+/* Admin specific memory stats */
 typedef struct AdminMemoryStats {
     admin_memory_stat_t total;
     admin_memory_stat_t entities;
@@ -38,6 +45,7 @@ typedef struct AdminMemoryStats {
     admin_memory_stat_t world;
 } AdminMemoryStats;
 
+/* Admin specific system stats */
 typedef struct AdminSystemStats {
     uint64_t invoke_count;
     admin_stat_t time_spent;
@@ -47,6 +55,7 @@ typedef struct AdminSystemStats {
     double prev_seconds_total;
 } AdminSystemStats;
 
+/* Admin specific component stats */
 typedef struct AdminComponentStats {
     admin_memory_stat_t memory;
 } AdminComponentStats;

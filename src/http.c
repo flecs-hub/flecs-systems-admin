@@ -384,12 +384,17 @@ void AdminHttpImport(
 {
     ECS_MODULE(world, AdminHttp);
 
+    /* Write world statistics to the reply */
     ECS_SYSTEM(world, AdminHttpReplyWorldStats, EcsManual, [in] EcsWorldStats, [in] AdminWorldStats,
         SYSTEM.EcsHidden);
 
+    /* Write memory statistics to the reply */
     ECS_SYSTEM(world, AdminHttpReplyMemoryStats, EcsManual, [in] AdminMemoryStats,
         SYSTEM.EcsHidden);
 
+    /* Write system statistics per phase. The admin JSON format organizes systems per phase. Each of
+     * these systems iterates over all the system statistics, but only writes the ones to JSON that
+     * match its own phase. */
     ECS_SYSTEM(world, AdminHttpReplySystemOnLoad, EcsManual, [in] EcsSystemStats, [in] AdminSystemStats,
         SYSTEM.EcsHidden);
     ECS_SYSTEM(world, AdminHttpReplySystemPostLoad, EcsManual, [in] EcsSystemStats, [in] AdminSystemStats,
@@ -409,6 +414,7 @@ void AdminHttpImport(
     ECS_SYSTEM(world, AdminHttpReplySystemManual, EcsManual, [in] EcsSystemStats, [in] AdminSystemStats,
         SYSTEM.EcsHidden);
 
+    /* System that invokes all per-phase systems */
     ECS_SYSTEM(world, AdminHttpReplySystemStats, EcsManual,
         .AdminHttpReplySystemOnLoad,
         .AdminHttpReplySystemPostLoad,
@@ -421,12 +427,15 @@ void AdminHttpImport(
         .AdminHttpReplySystemManual,
         SYSTEM.EcsHidden);
 
+    /* Write component statistics to the reply */
     ECS_SYSTEM(world, AdminHttpReplyComponentStats, EcsManual, [in] EcsComponentStats, [in] AdminComponentStats,
         SYSTEM.EcsHidden);
 
+    /* Write type statistics to the reply */
     ECS_SYSTEM(world, AdminHttpReplyTypeStats, EcsManual, [in] EcsTypeStats,
         SYSTEM.EcsHidden);
 
+    /* The main system that invokes all other systems */
     ECS_SYSTEM(world, AdminHttpReply, EcsManual,
         .AdminHttpReplyWorldStats,
         .AdminHttpReplyMemoryStats,
@@ -435,6 +444,7 @@ void AdminHttpImport(
         .AdminHttpReplyTypeStats,
         SYSTEM.EcsHidden);
 
+    /* Feature that contains all system statistics systems */
     ECS_TYPE(world, AdminHttpReplySystemSystems,
         AdminHttpReplySystemOnLoad,
         AdminHttpReplySystemPostLoad,
@@ -446,6 +456,7 @@ void AdminHttpImport(
         AdminHttpReplySystemOnStore,
         AdminHttpReplySystemManual);
 
+    /* Feature that contains all AdminHttp systems */
     ECS_TYPE(world, AdminHttpSystems,
         AdminHttpReplyWorldStats,
         AdminHttpReplyMemoryStats,
@@ -454,6 +465,7 @@ void AdminHttpImport(
         AdminHttpReplyComponentStats,
         AdminHttpReplyTypeStats);
 
+    /* Make features hidden, as they expose module internals */
     ecs_add(world, AdminHttpReplySystemSystems, EcsHidden);
     ecs_add(world, AdminHttpSystems, EcsHidden);
 

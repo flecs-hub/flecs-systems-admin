@@ -145,8 +145,10 @@ void FlecsSystemsAdminImport(
 {
     /* Import HTTP components */
     ECS_IMPORT(world, FlecsComponentsHttp, 0);
-    ECS_IMPORT(world, AdminCollect, 0);
-    ECS_IMPORT(world, AdminHttp, 0);
+
+    /* Private imports */
+    ECS_IMPORT(world, AdminCollect, 0); /* Collect derivative statistics */
+    ECS_IMPORT(world, AdminHttp, 0);    /* Systems that produce HTTP reply */
 
     ECS_MODULE(world, FlecsSystemsAdmin);
 

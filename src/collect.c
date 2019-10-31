@@ -292,8 +292,9 @@ void AdminCollectImport(
         [in] EcsComponentStats, [out] AdminComponentStats,
         SYSTEM.EcsOnDemand, SYSTEM.EcsHidden);
 
-    /* Single system that runs manual collection systems. This makes it easier
-     * to control the period at which the systems should run */
+    /* Single system that runs manual collection systems. This way we only need
+     * to set the period on this system to control at which period all of the
+     * collection systems are ran. */
     ECS_SYSTEM(world, AdminCollectMetrics, EcsOnStore,
         .AdminCollectWorldStats,
         .AdminCollectMemoryStats,
@@ -301,9 +302,11 @@ void AdminCollectImport(
         .AdminCollectComponentStats,
         SYSTEM.EcsHidden);
 
-    /* Run metrics collection once per second */
+    /* Run admin metrics collection once per second */
     ecs_set_period(world, AdminCollectMetrics, 1.0);
 
+    /* Store all admin collection systems in a feature so they can be easily
+     * enabled/disabled at once */
     ECS_TYPE(world, AdminCollectSystems,
         AdminAddWorldStats,
         AdminAddMemoryStats,
@@ -314,6 +317,7 @@ void AdminCollectImport(
         AdminCollectSystemStats,
         AdminCollectComponentStats);
 
+    /* Make this a hidden feature as it exposes internals of the module */
     ecs_add(world, AdminCollectSystems, EcsHidden);
 
     ECS_EXPORT_COMPONENT(AdminWorldStats);    
