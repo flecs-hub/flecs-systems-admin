@@ -40,7 +40,7 @@ If you are using bake, you can simply add these modules to the `"use"` property,
     "id": "my_project",
     "type": "application",
     "value": {
-        "use": ["flecs.components.http", "flecs.systems.civetweb", "flecs.systems.admin"]
+        "use": ["flecs", "flecs.components.http", "flecs.systems.civetweb", "flecs.systems.admin"]
     }
 }
 ```
